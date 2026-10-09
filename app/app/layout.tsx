@@ -6,7 +6,7 @@ import { categoryLabel, statusLabel } from "@/lib/domain";
 import { workspaceLinks } from "@/lib/nav";
 
 export const metadata: Metadata = {
-  title: { default: "Workspace", template: "%s · Competia" },
+  title: { default: "Workspace", template: "%s · competia.work" },
   robots: { index: false, follow: false },
 };
 
