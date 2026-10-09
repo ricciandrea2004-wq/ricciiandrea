@@ -15,6 +15,10 @@ La landing in `../landing/` resta separata: ci lavora il thread Supabase + Resen
 - **Da confermare**: l'indirizzo email pubblico in `app/(sito)/contatti/page.tsx` (ora `ciao@competia.work`).
 - **F2 non costruite**: Per chi, Prezzi, Risorse, briefing condiviso `/b/[token]`, impostazioni Notifiche e Fatturazione.
 
+## Pubblicazione
+
+Il repository GitHub `ricciandrea2004-wq/ricciiandrea` è collegato al progetto Vercel `competia-work`: ogni push su `main` pubblica il sito in produzione su www.competia.work; gli altri rami creano un'anteprima.
+
 ## Avvio
 
 ```sh
