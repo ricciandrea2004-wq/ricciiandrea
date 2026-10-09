@@ -3,6 +3,7 @@
   "crons": [
     { "path": "/api/cron/riepilogo-settimanale", "schedule": "0 7 * * 1" },
     { "path": "/api/cron/segnali-da-verificare", "schedule": "0 7 * * *" },
-    { "path": "/api/cron/controllo-sito", "schedule": "0 6 * * *" }
+    { "path": "/api/cron/controllo-sito", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/scrape", "schedule": "0 5 * * *" }
   ]
 }

@@ -43,6 +43,12 @@ Verifica: `npm run typecheck` e `npm run build`.
 | `ANALYTICS_USER`, `ANALYTICS_PASSWORD` | aprire `/analytics` |
 | `UMAMI_API_URL`, `UMAMI_WEBSITE_ID` | dati di Umami |
 | `UMAMI_API_KEY` (Umami Cloud) oppure `UMAMI_API_TOKEN` (self-hosted) | autenticazione verso Umami |
+| `COMPETIA_API_TOKEN`, `CRON_SECRET` | API `/api/v1` e controllo giornaliero delle fonti |
+| `COMPETIA_STORE`, `SUPABASE_SERVICE_ROLE_KEY`, `COMPETIA_ORGANIZATION_ID` | dati dell'API su Supabase invece dei dati di esempio |
+
+## API e controllo delle fonti
+
+`/api/v1` legge le pagine dei competitor (rispettando `robots.txt`), salva una copia del testo e crea un segnale quando qualcosa cambia. Vercel Cron la avvia una volta al giorno. Endpoint, esempi e cosa manca per il database vero: [docs/api.md](docs/api.md). Prova: `npm run test:scraper`.
 
 ## Struttura
 
@@ -55,6 +61,8 @@ app/
   analytics/       dashboard interna Umami
   auth/callback/   ritorno dal link di accesso (per ora solo redirect)
   api/access-request/   endpoint del modulo di accesso
+  api/v1/          API: competitor, fonti, segnali, controllo
+  api/cron/scrape/ controllo giornaliero (Vercel Cron)
   api/email/       invii a evento (evento) e hook di Supabase Auth (auth-hook)
   api/cron/        riepilogo settimanale, segnali fermi, controllo del sito (orari in vercel.json)
   not-found.tsx, error.tsx, global-error.tsx, robots.ts, sitemap.ts
@@ -65,6 +73,10 @@ lib/
   demo-data.ts     dati di esempio del workspace
   nav.ts           voci di navigazione
   umami.ts         lettura delle statistiche
+  scraper/         lettura delle pagine: robots.txt, testo, confronto, segnali
+  store/           dati dell'API: in memoria (demo) o Supabase
+supabase/migrations/   schema SQL (da applicare con l'OK di Andrea)
+docs/api.md      documentazione dell'API
   email/           template e invio delle email (vedi "Email")
 middleware.ts      password su /analytics
 public/lottie/     animazioni Lottie (generate da scripts/lottie/build.mjs)
