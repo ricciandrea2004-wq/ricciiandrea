@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/riepilogo-settimanale", "schedule": "0 7 * * 1" },
+    { "path": "/api/cron/segnali-da-verificare", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/controllo-sito", "schedule": "0 6 * * *" }
+  ]
+}

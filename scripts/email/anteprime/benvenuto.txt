@@ -1,0 +1,19 @@
+Oggetto: Benvenuto in Competia: i primi tre passi
+
+Ciao Giulia,
+
+lo spazio di Acme Distribuzione è pronto. Competia tiene insieme i segnali su prezzi, assortimento e promozioni dei tuoi competitor, ognuno con la pagina da cui arriva.
+
+I primi tre passi:
+1. Annota la fonte: Aggiungi la pagina da cui arriva il dato, con competitor e categoria. https://www.competia.work/app/fonti
+2. Verifica il segnale: Confronta il prima e il dopo e decidi se è un cambiamento reale. https://www.competia.work/app/segnali
+3. Componi il briefing: Scegli i segnali verificati: ogni affermazione porta alla sua fonte. https://www.competia.work/app/briefing/nuovo
+
+Apri lo spazio di lavoro: https://www.competia.work/app
+
+Se ti serve una mano a configurare i primi competitor, rispondi a questa email: la leggiamo noi.
+
+—
+competia.work · Sai cosa cambia sul mercato, con la fonte in mano.
+Ricevi questa email perché sei entrato per la prima volta su competia.work.
+Privacy: https://www.competia.work/legale/privacy · Contatti: ciao@competia.work

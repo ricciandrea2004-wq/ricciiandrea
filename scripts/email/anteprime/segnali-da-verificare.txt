@@ -1,0 +1,19 @@
+Oggetto: 2 segnali aspettano la verifica da più di 3 giorni
+
+Ciao Giulia,
+
+questi segnali sono in stato Da verificare da più di 3 giorni. Finché nessuno li verifica o li scarta non entrano nel briefing.
+
+- Tre nuove sedute ergonomiche nella linea Studio
+  Nordica Forniture · Assortimento · osservato il 5 ottobre, fermo da 4 giorni
+  https://www.competia.work/app/segnali/s-103
+- Spedizione gratuita sopra i 300 euro
+  Brio Retail · Promozione · osservato il 7 ottobre, fermo da 2 giorni
+  https://www.competia.work/app/segnali/s-105
+
+Apri i segnali da verificare: https://www.competia.work/app/segnali?stato=to_verify
+
+—
+competia.work · Sai cosa cambia sul mercato, con la fonte in mano.
+Ricevi questo avviso perché fai parte dello spazio Acme Distribuzione su competia.work e alcuni segnali sono fermi.
+Privacy: https://www.competia.work/legale/privacy · Contatti: ciao@competia.work
