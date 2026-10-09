@@ -6,7 +6,8 @@ import { CategoryTag, StatusTag } from "@/components/SignalTags";
 import CopyLinkButton from "@/components/workspace/CopyLinkButton";
 import Topbar from "@/components/workspace/Topbar";
 import { getCompetitor, getSource, organization, signalsForSource, sources } from "@/lib/demo-data";
-import { formatDate, formatShortDate } from "@/lib/domain";
+import Tag from "@/components/Tag";
+import { formatDate, formatShortDate, sourceStatusColor, sourceStatusLabel } from "@/lib/domain";
 
 export function generateStaticParams() {
   return sources.map((s) => ({ id: s.id }));
@@ -68,6 +69,15 @@ export default async function SourcePage({ params }: { params: Promise<{ id: str
             Ultima osservazione
           </dt>
           <dd>{formatDate(source.lastObservedAt)}</dd>
+          <dt>
+            <Icon name="clock" />
+            Controllo automatico
+          </dt>
+          <dd>
+            <Tag color={sourceStatusColor[source.status]}>{sourceStatusLabel[source.status]}</Tag>
+            {source.lastCheckedAt && <span className="num"> · {formatDate(source.lastCheckedAt)}</span>}
+            {source.lastError && <span> · {source.lastError}</span>}
+          </dd>
         </dl>
 
         {source.note && (

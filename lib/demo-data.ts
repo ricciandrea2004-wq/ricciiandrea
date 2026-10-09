@@ -37,6 +37,10 @@ export const sources: Source[] = [
     addedAt: "2026-09-12T09:00:00Z",
     lastObservedAt: "2026-10-02T08:30:00Z",
     note: "Mostra i tre piani mensili. I prezzi sono IVA esclusa.",
+    status: "active",
+    lastCheckedAt: "2026-10-02T08:30:00Z",
+    lastError: null,
+    selector: null,
   },
   {
     id: "src-vela-blog",
@@ -47,6 +51,10 @@ export const sources: Source[] = [
     addedAt: "2026-09-12T09:05:00Z",
     lastObservedAt: "2026-10-06T10:00:00Z",
     note: "Le promozioni a tempo vengono annunciate qui prima che in newsletter.",
+    status: "active",
+    lastCheckedAt: "2026-10-06T10:00:00Z",
+    lastError: null,
+    selector: null,
   },
   {
     id: "src-nordica-catalogo",
@@ -57,6 +65,10 @@ export const sources: Source[] = [
     addedAt: "2026-09-15T14:20:00Z",
     lastObservedAt: "2026-10-05T07:45:00Z",
     note: "Elenco completo con codici articolo.",
+    status: "active",
+    lastCheckedAt: "2026-10-05T07:45:00Z",
+    lastError: null,
+    selector: null,
   },
   {
     id: "src-nordica-listino",
@@ -67,6 +79,10 @@ export const sources: Source[] = [
     addedAt: "2026-09-15T14:30:00Z",
     lastObservedAt: "2026-10-01T09:00:00Z",
     note: "Listino in PDF, aggiornato il primo del mese.",
+    status: "active",
+    lastCheckedAt: "2026-10-01T09:00:00Z",
+    lastError: null,
+    selector: null,
   },
   {
     id: "src-brio-offerte",
@@ -77,6 +93,10 @@ export const sources: Source[] = [
     addedAt: "2026-09-20T11:00:00Z",
     lastObservedAt: "2026-10-07T16:10:00Z",
     note: "Offerte con data di fine indicata in pagina.",
+    status: "active",
+    lastCheckedAt: "2026-10-07T16:10:00Z",
+    lastError: null,
+    selector: null,
   },
   {
     id: "src-brio-novita",
@@ -87,6 +107,10 @@ export const sources: Source[] = [
     addedAt: "2026-09-20T11:10:00Z",
     lastObservedAt: "2026-10-08T08:00:00Z",
     note: "",
+    status: "active",
+    lastCheckedAt: "2026-10-08T08:00:00Z",
+    lastError: null,
+    selector: null,
   },
 ];
 
