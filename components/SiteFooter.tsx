@@ -1,7 +1,7 @@
 import Link from "next/link";
 import ThemeSwitch from "./ThemeSwitch";
 import { footerGroups } from "@/lib/nav";
-import { LogoMark, Wordmark } from "@/components/Logo";
+import AnimatedLogo from "@/components/motion/AnimatedLogo";
 
 export default function SiteFooter() {
   return (
@@ -10,8 +10,7 @@ export default function SiteFooter() {
         <div className="footer-grid">
           <div>
             <Link href="/" className="logo">
-              <LogoMark />
-              <Wordmark />
+              <AnimatedLogo trigger="view" />
             </Link>
             <p className="muted" style={{ marginTop: 12, maxWidth: 300 }}>
               Segnali competitivi su prezzi, assortimento e promozioni, sempre con la fonte.

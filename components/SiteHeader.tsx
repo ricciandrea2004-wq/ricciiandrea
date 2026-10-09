@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
 import { headerLinks, productLinks } from "@/lib/nav";
-import { LogoMark, Wordmark } from "@/components/Logo";
+import AnimatedLogo from "@/components/motion/AnimatedLogo";
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -49,8 +49,7 @@ export default function SiteHeader() {
     <header className="site-header" data-scrolled={scrolled || mobileOpen}>
       <div className="container site-header__inner">
         <Link href="/" className="logo" aria-label="competia.work, home">
-          <LogoMark />
-          <Wordmark />
+          <AnimatedLogo trigger="load" />
         </Link>
 
         <nav className="site-nav" aria-label="Principale">

@@ -9,8 +9,8 @@
 //   design system: thinner stroke and a colour class instead of black.
 //
 // Colours are never final in the JSON. Every layer carries a class (c-ink, c-accent…)
-// and components/lottie/lottie.css maps it to a token, so the same file follows the
-// light and dark theme.
+// and app/globals.css maps it to a token, so the same file follows the light and
+// dark theme.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -32,6 +32,10 @@ const COLORS = {
   "accent-soft": [0.9, 0.94, 0.98, 1],
   ok: [0.27, 0.51, 0.38, 1],
   "on-ok": [1, 1, 1, 1],
+  text: [0.22, 0.21, 0.18, 1],
+  "logo-tile": [0.22, 0.21, 0.18, 1],
+  "logo-glyph": [1, 1, 1, 1],
+  "logo-dot": [0.35, 0.65, 0.9, 1],
 };
 
 // --- keyframes -------------------------------------------------------------
@@ -481,7 +485,131 @@ function richiesta() {
   ]);
 }
 
-const custom = { fonte, verifica, briefing, richiesta };
+// --- logo ------------------------------------------------------------------
+
+// The animated logo: the "c." symbol and the wordmark "competia.work", drawn at the
+// exact size and place of the static logo in the header (components/Logo.tsx), so
+// the two can swap without anything moving. The wordmark outlines come from
+// wordmark.json (see outline-wordmark.mjs). Everything is drawn 4× larger than the
+// CSS size; the player scales it back down.
+const K = 4;
+const LOGO_W = 150;
+const LOGO_H = 27.25;
+const TILE = { x: 0, y: 2.59375, size: 22 };
+
+const r2 = (n) => Math.round(n * 100) / 100;
+const px = ([x, y]) => [r2(x * K), r2(y * K)];
+// A point of the 64-unit symbol (public/favicon.svg) inside the logo box, and a
+// tangent (a point relative to another), which only scales.
+const tile = ([x, y]) => px([TILE.x + (x * TILE.size) / 64, TILE.y + (y * TILE.size) / 64]);
+const tileTangent = ([x, y]) => px([(x * TILE.size) / 64, (y * TILE.size) / 64]);
+
+// A circular arc as cubic curves, from angle a0 to a1 (radians, y pointing down).
+function arc(cx, cy, r, a0, a1, parts = 3) {
+  const step = (a1 - a0) / parts;
+  const k = (4 / 3) * Math.tan(step / 4);
+  const at = (a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const v = [];
+  const i = [];
+  const o = [];
+  for (let n = 0; n <= parts; n++) {
+    const a = a0 + step * n;
+    const [x, y] = at(a);
+    const t = [-r * k * Math.sin(a), r * k * Math.cos(a)];
+    v.push([x, y]);
+    i.push(n === 0 ? [0, 0] : [-t[0], -t[1]]);
+    o.push(n === parts ? [0, 0] : t);
+  }
+  return { v, i, o };
+}
+
+// A path from its vertices and tangents; `point` and `tangent` place them in the box.
+const outline = ({ v, i, o }, closed, point, tangent) => ({
+  ty: "sh",
+  ks: fixed({ v: v.map(point), i: i.map(tangent), o: o.map(tangent), c: closed }),
+});
+
+// Drops from `height` px above, passes its place by a hair and settles.
+function settle(start, height) {
+  return {
+    o: anim([
+      [start, 0],
+      [start + 5, 100],
+    ]),
+    p: anim([
+      [start, [0, -height * K]],
+      [start + 12, [0, 0.6 * K]],
+      [start + 20, [0, 0]],
+    ]),
+  };
+}
+
+function logo() {
+  const wordmark = JSON.parse(fs.readFileSync(path.join(here, "wordmark.json"), "utf8"));
+  const glyph = (g, tr) =>
+    group(
+      [...g.contours.map((c) => outline(c, true, px, px)), fill()],
+      tr,
+    );
+  // Each letter fades in and rises 3px; letters follow each other by 2.5 frames.
+  const letter = (g, start) =>
+    glyph(g, {
+      o: anim([
+        [start, 0],
+        [start + 14, 100],
+      ]),
+      p: anim([
+        [start, [0, 3 * K]],
+        [start + 14, [0, 0]],
+      ]),
+    });
+  const dotAt = wordmark.text.indexOf(".");
+  const before = wordmark.glyphs.slice(0, dotAt);
+  const after = wordmark.glyphs.slice(dotAt + 1);
+  const DOTS = 36;
+
+  // The "c": an arc of radius 14 around the symbol's centre, drawn from its top end.
+  const end = Math.atan2(-9, 6.72);
+  const c = arc(32, 32, 14, end, end - (2 * Math.PI - 2 * Math.abs(end)));
+  const center = tile([32, 32]);
+
+  return animation("logo", LOGO_W * K, LOGO_H * K, 72, [
+    layer("logo-tile", [
+      pop(
+        [
+          {
+            ty: "rc",
+            d: 1,
+            p: fixed(center),
+            s: fixed([TILE.size * K, TILE.size * K]),
+            r: fixed(((14 * TILE.size) / 64) * K),
+          },
+          fill(),
+        ],
+        center[0],
+        center[1],
+        0,
+        14,
+        80,
+      ),
+    ]),
+    layer("logo-glyph", [
+      group([outline(c, false, tile, tileTangent), stroke((6 * TILE.size * K) / 64), draw(6, 28)]),
+    ]),
+    layer("logo-dot", [group([circle(...tile([47, 43]), ((9 * TILE.size) / 64) * K), fill()])], settle(DOTS, 5)),
+    layer(
+      "text",
+      before.map((g, n) => letter(g, 8 + 2.5 * n)),
+    ),
+    layer("accent", [glyph(wordmark.glyphs[dotAt])], settle(DOTS, 6)),
+    layer(
+      "text",
+      after.map((g, n) => letter(g, 46 + 2.5 * n)),
+    ),
+  ]);
+}
+
+const custom = { fonte, verifica, briefing, richiesta, logo };
 for (const [name, make] of Object.entries(custom)) {
   fs.writeFileSync(path.join(out, `${name}.json`), JSON.stringify(make()));
 }

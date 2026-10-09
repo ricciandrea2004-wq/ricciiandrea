@@ -75,6 +75,7 @@ Due librerie, usate solo nelle pagine che ne hanno bisogno (le altre non le scar
 | `fonte`, `verifica`, `briefing` | disegnati in codice | tre passi in home e in /prodotto |
 | `richiesta` | disegnato in codice | /richiedi-accesso/grazie |
 | `email`, `bussola`, `nessun-risultato`, `avviso` | useAnimations (MIT) | controlla l'email, 404, filtri senza risultati, errore |
+| `logo` | disegnato in codice, lettere di Inter 700 vettorializzate | header (all'apertura della pagina) e footer (quando entra in vista) |
 
 Animazioni che si ripetono (poche, lente, ferme quando la pagina non è visibile o con il movimento ridotto):
 
@@ -85,6 +86,12 @@ Animazioni che si ripetono (poche, lente, ferme quando la pagina non è visibile
 I JSON si rigenerano con `node scripts/lottie/build.mjs`. I colori non sono fissati nei file: ogni livello ha una classe (`c-ink`, `c-accent`…) che `app/globals.css` collega ai token, così i disegni seguono il tema chiaro e scuro. Le fonti e la licenza dei file presi da useAnimations sono in `scripts/lottie/useanimations/README.md`.
 
 Con `prefers-reduced-motion` nessun movimento: i disegni compaiono già finiti e i valori sono subito quelli finali.
+
+## Logo e favicon
+
+Il logo animato (`components/motion/AnimatedLogo.tsx`) dura 1,2 secondi e parte una volta: compare il simbolo "c.", si scrivono le lettere, poi i due punti blu cadono al loro posto. Il logo statico (`components/Logo.tsx`) resta sotto e tiene lo spazio: è quello che si vede senza JavaScript, con il movimento ridotto e dopo una navigazione interna. Le lettere del wordmark sono i contorni di Inter 700, presi una volta con `scripts/lottie/outline-wordmark.mjs` e salvati in `scripts/lottie/wordmark.json`.
+
+Il simbolo usa i token `--logo-tile`, `--logo-glyph` e `--logo-dot`: scuro nel tema chiaro, chiaro nel tema scuro. `public/favicon.svg` fa lo stesso con `prefers-color-scheme`, così resta leggibile anche nelle schede scure; deve restare un SVG pulito, senza metadati. `favicon.ico`, `apple-touch-icon.png` e `app/opengraph-image.png` si rigenerano con `scripts/brand/render.mjs`.
 
 ## Scorciatoie nel workspace
 

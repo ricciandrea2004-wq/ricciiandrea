@@ -488,6 +488,10 @@ fieldset {
   color: var(--accent-text);
 }
 
+.logo-mark__tile { fill: var(--logo-tile); }
+.logo-mark__glyph { stroke: var(--logo-glyph); }
+.logo-mark__dot { fill: var(--logo-dot); }
+
 .site-nav {
   display: flex;
   align-items: center;
@@ -2004,6 +2008,41 @@ a.list__item:hover {
 .lottie .c-accent-soft [fill] { fill: var(--accent-soft); }
 .lottie .c-ok [fill] { fill: var(--tag-green); }
 .lottie .c-on-ok [stroke] { stroke: var(--bg-raised); }
+.lottie .c-text [fill] { fill: var(--text); }
+.lottie .c-logo-tile [fill] { fill: var(--logo-tile); }
+.lottie .c-logo-glyph [stroke] { stroke: var(--logo-glyph); }
+.lottie .c-logo-dot [fill] { fill: var(--logo-dot); }
+
+/* Logo animato: il disegno Lottie si posa esattamente sopra il logo statico, che tiene
+   lo spazio e resta il logo senza JavaScript o con il movimento ridotto. */
+.logo-anim {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.logo-anim__lottie {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 150px;
+  height: 27.25px;
+  pointer-events: none;
+}
+
+.logo-anim[data-motion="playing"] > .logo-mark,
+.logo-anim[data-motion="playing"] > .wordmark {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.js .logo-anim[data-motion="pending"] > .logo-mark,
+  html.js .logo-anim[data-motion="pending"] > .wordmark {
+    opacity: 0;
+    animation: motion-fallback 0s 2s forwards;
+  }
+}
 
 /* Passi con disegno: numero, testo, disegno. */
 .steps--art li {
