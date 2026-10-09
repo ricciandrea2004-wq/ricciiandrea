@@ -50,7 +50,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
             Stato
           </dt>
           <dd>
-            <StatusTag status={signal.status} />
+            <StatusTag status={signal.status} live />
           </dd>
           <dt>
             <Icon name="tag" />

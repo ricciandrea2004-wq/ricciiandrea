@@ -2026,6 +2026,115 @@ a.list__item:hover {
   margin-bottom: var(--space-2);
 }
 
+/* ---------- Pochi loop: lenti, solo dove il colore ha un significato fisso ---------- */
+
+/* Segnale d'esempio che ruota fra le tre categorie. */
+.signal-card--cycle h3 {
+  min-height: calc(2 * 1.3em);
+}
+
+.cat-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+
+.signal-card__pager {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  margin: var(--space-2) -6px -6px 0;
+}
+
+.signal-card__dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}
+
+.signal-card__dot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--dot, var(--text-tertiary));
+  opacity: 0.35;
+  transition:
+    width var(--dur-slow) var(--ease-out),
+    opacity var(--dur-slow) var(--ease-out);
+}
+
+.signal-card__dot[aria-pressed="true"]::before {
+  width: 14px;
+  opacity: 1;
+}
+
+.signal-card__dot:hover::before {
+  opacity: 0.7;
+}
+
+.signal-card__dot[aria-pressed="true"]:hover::before {
+  opacity: 1;
+}
+
+/* Stati che si illuminano a turno, ciascuno nel suo colore. */
+.status-cycle .list__item {
+  transition:
+    background-color 600ms var(--ease-out),
+    box-shadow 600ms var(--ease-out);
+}
+
+.status-cycle li[data-current] .list__item {
+  background: color-mix(in srgb, var(--row) 9%, transparent);
+  box-shadow: inset 2px 0 0 var(--row);
+}
+
+/* Workspace: un segnale ancora da verificare respira piano. È l'unico loop nel workspace. */
+.tag__pulse {
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: tag-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes tag-breathe {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Ogni loop si ferma quando la pagina non è visibile, e non parte con il movimento ridotto. */
+html[data-page-hidden] .tag__pulse {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag__pulse {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  .status-cycle .list__item,
+  .signal-card__dot::before {
+    transition: none !important;
+  }
+}
+
 /* Entrata delle sezioni pubbliche mentre si scorre: solo dove il browser la supporta, senza JavaScript. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {

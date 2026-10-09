@@ -128,7 +128,7 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
                         <CategoryTag category={s.category} />
                       </td>
                       <td>
-                        <StatusTag status={s.status} />
+                        <StatusTag status={s.status} live />
                       </td>
                       <td className="num muted" style={{ minWidth: 200 }}>
                         {s.before} → {s.after}
