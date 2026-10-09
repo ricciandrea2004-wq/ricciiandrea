@@ -1,0 +1,15 @@
+Oggetto: Il tuo link per entrare in Competia
+
+Ciao,
+
+apri questo link per entrare in Competia. Non serve una password.
+https://kzylimybxebkmhewnkjf.supabase.co/auth/v1/verify?token=esempio&type=magiclink&redirect_to=https%3A%2F%2Fwww.competia.work%2Fauth%2Fcallback
+
+Oppure inserisci questo codice nella pagina di accesso: 482913
+
+Il link vale 1 ora e si usa una volta sola.
+
+—
+competia.work · Sai cosa cambia sul mercato, con la fonte in mano.
+Ricevi questa email perché qualcuno ha chiesto di entrare su competia.work con questo indirizzo. Se non sei stato tu, ignorala: senza il link nessuno può entrare.
+Privacy: https://www.competia.work/legale/privacy · Contatti: ciao@competia.work
