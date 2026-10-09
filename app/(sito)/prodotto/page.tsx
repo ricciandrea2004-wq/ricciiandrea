@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import { CtaBand, PageHero, SectionHead } from "@/components/Marketing";
+import LottieAnimation, { type LottieName } from "@/components/motion/LottieAnimation";
 import { productLinks } from "@/lib/nav";
 
 export const metadata: Metadata = {
@@ -9,16 +10,19 @@ export const metadata: Metadata = {
   description: "Come Competia porta un dato dalla pagina del competitor al briefing, passando per la verifica.",
 };
 
-const flow = [
+const flow: { title: string; text: string; art: LottieName }[] = [
   {
+    art: "fonte",
     title: "Fonte",
     text: "Ogni osservazione parte da una pagina pubblica: listino, catalogo, pagina offerte, annuncio. La salvi una volta, con competitor e categoria.",
   },
   {
+    art: "verifica",
     title: "Segnale",
     text: "Quando qualcosa cambia registri il prima e il dopo, la data e cosa ne pensi. Il segnale resta \"da verificare\" finché qualcuno non lo conferma.",
   },
   {
+    art: "briefing",
     title: "Briefing",
     text: "Scegli i segnali verificati del periodo. Il briefing li raccoglie in un documento dove ogni frase porta alla sua fonte.",
   },
@@ -37,13 +41,14 @@ export default function ProductPage() {
       <section className="section section--border">
         <div className="container">
           <SectionHead title="Fonte, segnale, briefing." lead="Tre oggetti, collegati fra loro. Nessun dato entra nel briefing senza la sua pagina d'origine." />
-          <ol className="steps reveal" style={{ maxWidth: 760 }}>
-            {flow.map((f) => (
+          <ol className="steps steps--art reveal" style={{ maxWidth: 760 }}>
+            {flow.map((f, i) => (
               <li key={f.title}>
                 <div>
                   <h3>{f.title}</h3>
                   <p>{f.text}</p>
                 </div>
+                <LottieAnimation name={f.art} width={112} height={78} delay={i * 180} className="steps__art" />
               </li>
             ))}
           </ol>

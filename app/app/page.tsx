@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CategoryTag, StatusTag } from "@/components/SignalTags";
+import CountUp from "@/components/motion/CountUp";
 import Tag from "@/components/Tag";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
@@ -36,7 +37,9 @@ export default function OverviewPage() {
           {stats.map((s, i) => (
             <Link key={s.label} href={s.href} className="stat" style={{ "--i": i } as React.CSSProperties}>
               <span className="small muted">{s.label}</span>
-              <div className="stat__value">{s.value}</div>
+              <div className="stat__value">
+                <CountUp value={s.value} delay={i * 40} />
+              </div>
             </Link>
           ))}
         </div>

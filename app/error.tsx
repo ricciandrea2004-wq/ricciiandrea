@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import LottieAnimation from "@/components/motion/LottieAnimation";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -11,6 +12,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   return (
     <main className="error-page">
       <div className="ds-stagger" style={{ maxWidth: 520 }}>
+        <LottieAnimation name="avviso" width={48} height={48} className="lottie--center" />
         <p className="code">Errore{error.digest ? ` · ${error.digest}` : ""}</p>
         <h1 style={{ "--i": 1 } as React.CSSProperties}>Qualcosa non ha funzionato.</h1>
         <p className="lead" style={{ "--i": 2, marginInline: "auto" } as React.CSSProperties}>

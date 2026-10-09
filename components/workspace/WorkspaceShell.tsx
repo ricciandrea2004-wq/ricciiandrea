@@ -1,11 +1,14 @@
 "use client";
 
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Icon from "../Icon";
 import CommandPalette, { type PaletteEntry } from "./CommandPalette";
 import { workspaceLinks } from "@/lib/nav";
+import { dur, easeIn, easeOut } from "../motion/shared";
 
 type ShellApi = {
   openMobile: () => void;
@@ -175,11 +178,19 @@ export default function WorkspaceShell({
       {paletteOpen && <CommandPalette entries={entries} onClose={() => setPaletteOpen(false)} />}
 
       <div className="toast-region" role="status" aria-live="polite">
-        {toastMsg && (
-          <div className="toast-msg ds-toast" key={toastMsg}>
-            {toastMsg}
-          </div>
-        )}
+        <AnimatePresence>
+          {toastMsg && (
+            <m.div
+              className="toast-msg"
+              key={toastMsg}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: dur.base, ease: easeOut } }}
+              exit={{ opacity: 0, transition: { duration: dur.fast, ease: easeIn } }}
+            >
+              {toastMsg}
+            </m.div>
+          )}
+        </AnimatePresence>
       </div>
     </ShellContext.Provider>
   );

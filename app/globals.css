@@ -866,8 +866,26 @@ fieldset {
 
 .delta__value--before {
   color: var(--text-secondary);
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
+}
+
+/* Barra sul valore "prima": un elemento a sé, così si può disegnare da sinistra a destra. */
+.delta__struck {
+  position: relative;
+  display: inline-block;
+}
+
+.delta__strike {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 52%;
+  height: 1px;
+  background: currentColor;
+  transform-origin: left center;
+}
+
+.delta[data-motion="ready"] .delta__strike {
+  transform: scaleX(0);
 }
 
 .delta__arrow {
@@ -1928,6 +1946,84 @@ a.list__item:hover {
 .error-page .row {
   justify-content: center;
   margin-top: var(--space-5);
+}
+
+/* ---------- Animazioni (motion e Lottie) ---------- */
+
+/* Valori che il client anima: finché il JavaScript non arriva restano nascosti, ma mai oltre 2 secondi. */
+@media (prefers-reduced-motion: no-preference) {
+  html.js .delta[data-motion="pending"] .delta__cell--after .delta__value,
+  html.js .signal-card[data-motion="pending"] .signal-card__status,
+  html.js .count[data-motion="pending"] {
+    opacity: 0;
+    animation: motion-fallback 0s 2s forwards;
+  }
+}
+
+@keyframes motion-fallback {
+  to {
+    opacity: 1;
+  }
+}
+
+.signal-card__status {
+  display: inline-flex;
+}
+
+.icon-swap {
+  display: inline-grid;
+  place-items: center;
+}
+
+/* Disegni Lottie: i colori arrivano dai token, così seguono il tema chiaro e scuro. */
+.lottie {
+  display: inline-block;
+  flex: none;
+  vertical-align: top;
+}
+
+.lottie--center {
+  display: block;
+  margin-inline: auto;
+}
+
+.lottie > .lottie__player {
+  width: 100%;
+  height: 100%;
+}
+
+.lottie .c-ink [stroke] { stroke: var(--text-secondary); }
+.lottie .c-ink [fill] { fill: var(--text-secondary); }
+.lottie .c-faint [stroke] { stroke: var(--border-strong); }
+.lottie .c-faint [fill] { fill: var(--border-strong); }
+.lottie .c-paper [fill] { fill: var(--bg-raised); }
+.lottie .c-subtle [fill] { fill: var(--bg-subtle); }
+.lottie .c-accent [stroke] { stroke: var(--accent-text); }
+.lottie .c-accent [fill] { fill: var(--accent-text); }
+.lottie .c-accent-soft [fill] { fill: var(--accent-soft); }
+.lottie .c-ok [fill] { fill: var(--tag-green); }
+.lottie .c-on-ok [stroke] { stroke: var(--bg-raised); }
+
+/* Passi con disegno: numero, testo, disegno. */
+.steps--art li {
+  grid-template-columns: 32px minmax(0, 1fr) 112px;
+  align-items: start;
+}
+
+@media (max-width: 520px) {
+  .steps--art li {
+    grid-template-columns: 28px minmax(0, 1fr) 80px;
+    gap: var(--space-3);
+  }
+
+  .steps__art {
+    width: 80px !important;
+    height: 56px !important;
+  }
+}
+
+.empty .lottie {
+  margin-bottom: var(--space-2);
 }
 
 /* Entrata delle sezioni pubbliche mentre si scorre: solo dove il browser la supporta, senza JavaScript. */

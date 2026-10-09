@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Icon from "@/components/Icon";
 import { CategoryTag, StatusTag } from "@/components/SignalTags";
+import PriceDelta from "@/components/motion/PriceDelta";
 import CopyLinkButton from "@/components/workspace/CopyLinkButton";
 import DemoAction from "@/components/workspace/DemoAction";
 import Topbar from "@/components/workspace/Topbar";
@@ -114,17 +115,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
           )}
         </div>
 
-        <div className="delta" style={{ marginTop: 0 }}>
-          <div className="delta__cell">
-            <div className="xs muted">Prima</div>
-            <div className="delta__value delta__value--before">{signal.before}</div>
-          </div>
-          <Icon name="arrowRight" className="icon delta__arrow" />
-          <div className="delta__cell delta__cell--after">
-            <div className="xs muted">Dopo</div>
-            <div className="delta__value">{signal.after}</div>
-          </div>
-        </div>
+        <PriceDelta before={signal.before} after={signal.after} style={{ marginTop: 0 }} />
 
         <section className="block">
           <h2 className="block-title">Interpretazione</h2>

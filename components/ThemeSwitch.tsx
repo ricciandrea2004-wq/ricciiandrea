@@ -8,7 +8,7 @@ type Theme = "system" | "light" | "dark";
 export const THEME_KEY = "competia-theme";
 
 // Runs before paint (inlined in the root layout) so a saved theme never flashes.
-export const themeScript = `try{var t=localStorage.getItem("${THEME_KEY}");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+export const themeScript = `document.documentElement.classList.add("js");try{var t=localStorage.getItem("${THEME_KEY}");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 function apply(theme: Theme) {
   const root = document.documentElement;
