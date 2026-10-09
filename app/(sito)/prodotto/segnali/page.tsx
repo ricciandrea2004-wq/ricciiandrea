@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { CtaBand, Feature, PageHero, SectionHead, SignalExample } from "@/components/Marketing";
+import { CtaBand, Feature, PageHero, SectionHead } from "@/components/Marketing";
+import SignalExample from "@/components/SignalExample";
 import { StatusTag } from "@/components/SignalTags";
 import { statuses, statusLabel } from "@/lib/domain";
 

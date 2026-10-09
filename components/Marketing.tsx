@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Icon, { type IconName } from "./Icon";
-import Tag from "./Tag";
 
 export function PageHero({ eyebrow, title, lead, children }: { eyebrow?: string; title: string; lead?: string; children?: React.ReactNode }) {
   return (
@@ -68,55 +67,5 @@ export function CtaBand({ title = "Porta il prossimo briefing su segnali verific
         </div>
       </div>
     </section>
-  );
-}
-
-export function SignalExample({
-  kind = "Prezzo · Competitor A",
-  title = "Il piano Pro scende da 52 a 48 euro al mese",
-  before = "52 €",
-  after = "48 €",
-  source = "pagina prezzi pubblica del competitor",
-  observed = "2 ottobre 2026",
-  status = { label: "Verificato", color: "green" as const },
-  className = "",
-}: {
-  kind?: string;
-  title?: string;
-  before?: string;
-  after?: string;
-  source?: string;
-  observed?: string;
-  status?: { label: string; color: "green" | "yellow" | "blue" };
-  className?: string;
-}) {
-  return (
-    <figure className={`signal-card ${className}`} style={{ margin: 0 }}>
-      <div className="signal-card__top">
-        <span className="xs muted">Esempio illustrativo</span>
-        <Tag color={status.color}>{status.label}</Tag>
-      </div>
-      <p className="eyebrow">{kind}</p>
-      <h3>{title}</h3>
-      <div className="delta">
-        <div className="delta__cell">
-          <div className="xs muted">Prima</div>
-          <div className="delta__value delta__value--before">{before}</div>
-        </div>
-        <Icon name="arrowRight" className="icon delta__arrow" />
-        <div className="delta__cell delta__cell--after">
-          <div className="xs muted">Dopo</div>
-          <div className="delta__value">{after}</div>
-        </div>
-      </div>
-      <figcaption className="signal-card__meta">
-        <span>
-          <strong>Fonte:</strong> {source}
-        </span>
-        <span>
-          <strong>Osservato:</strong> {observed}
-        </span>
-      </figcaption>
-    </figure>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Icon from "@/components/Icon";
+import LottieAnimation from "@/components/motion/LottieAnimation";
 
 export const metadata: Metadata = {
   title: "Richiesta ricevuta",
@@ -11,7 +11,7 @@ export default function ThanksPage() {
   return (
     <section className="error-page">
       <div className="ds-stagger" style={{ maxWidth: 520 }}>
-        <Icon name="checkCircle" className="page-head__icon" />
+        <LottieAnimation name="richiesta" width={72} height={72} className="lottie--center" />
         <h1 style={{ "--i": 1, marginTop: 8 } as React.CSSProperties}>Richiesta ricevuta.</h1>
         <p className="lead" style={{ "--i": 2, marginInline: "auto" } as React.CSSProperties}>
           Ti abbiamo scritto un&apos;email di conferma. Se non la trovi, controlla nella posta indesiderata.

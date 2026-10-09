@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Icon from "@/components/Icon";
+import LottieAnimation from "@/components/motion/LottieAnimation";
 import { CategoryTag, StatusTag } from "@/components/SignalTags";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
@@ -96,6 +97,7 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
         {view === "tabella" ? (
           rows.length === 0 ? (
             <div className="empty">
+              <LottieAnimation name="nessun-risultato" width={40} height={40} delay={120} className="lottie--center" />
               <strong>Nessun segnale con questi filtri</strong>
               <Link href="/app/segnali" className="link">
                 Togli i filtri

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import MotionProvider from "@/components/motion/MotionProvider";
 import WorkspaceShell from "@/components/workspace/WorkspaceShell";
 import type { PaletteEntry } from "@/components/workspace/CommandPalette";
 import { briefings, competitors, organization, signals, sources } from "@/lib/demo-data";
@@ -34,11 +35,13 @@ function paletteEntries(): PaletteEntry[] {
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const toVerify = signals.filter((s) => s.status === "to_verify").length;
   return (
-    <WorkspaceShell orgName={organization.name} toVerify={toVerify} entries={paletteEntries()}>
-      <div className="demo-banner">
-        Dati di esempio: il workspace non è ancora collegato al database e l&apos;accesso non è ancora protetto.
-      </div>
-      {children}
-    </WorkspaceShell>
+    <MotionProvider>
+      <WorkspaceShell orgName={organization.name} toVerify={toVerify} entries={paletteEntries()}>
+        <div className="demo-banner">
+          Dati di esempio: il workspace non è ancora collegato al database e l&apos;accesso non è ancora protetto.
+        </div>
+        {children}
+      </WorkspaceShell>
+    </MotionProvider>
   );
 }

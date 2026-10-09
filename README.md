@@ -51,15 +51,34 @@ app/
   api/access-request/   endpoint del modulo di accesso
   not-found.tsx, error.tsx, global-error.tsx, robots.ts, sitemap.ts
 components/        componenti condivisi; workspace/ per la shell del workspace
+components/motion/ animazioni (motion e Lottie)
 lib/
   domain.ts        tipi ed etichette in italiano
   demo-data.ts     dati di esempio del workspace
   nav.ts           voci di navigazione
   umami.ts         lettura delle statistiche
 middleware.ts      password su /analytics
+public/lottie/     animazioni Lottie (generate da scripts/lottie/build.mjs)
 ```
 
 `app/tokens.css` è una copia di `../design-system/tokens.css`: se cambia uno, va aggiornato l'altro.
+
+## Animazioni
+
+Due librerie, usate solo nelle pagine che ne hanno bisogno (le altre non le scaricano):
+
+- **motion** (`components/motion/`): il segnale d'esempio in home e in /prodotto/segnali (il valore "prima" si barra, il "dopo" conta fino al nuovo prezzo, lo stato passa da "Da verificare" a "Verificato"), lo stesso prima/dopo nel dettaglio di un segnale, i numeri della Panoramica, il toast e il bottone "Copia link" del workspace.
+- **lottie-react** (`components/motion/LottieAnimation.tsx`): disegni che si animano una volta quando entrano in vista. Il motore Lottie si scarica solo quando il disegno sta per comparire.
+
+| File in `public/lottie/` | Origine | Dove |
+|---|---|---|
+| `fonte`, `verifica`, `briefing` | disegnati in codice | tre passi in home e in /prodotto |
+| `richiesta` | disegnato in codice | /richiedi-accesso/grazie |
+| `email`, `bussola`, `nessun-risultato`, `avviso` | useAnimations (MIT) | controlla l'email, 404, filtri senza risultati, errore |
+
+I JSON si rigenerano con `node scripts/lottie/build.mjs`. I colori non sono fissati nei file: ogni livello ha una classe (`c-ink`, `c-accent`…) che `app/globals.css` collega ai token, così i disegni seguono il tema chiaro e scuro. Le fonti e la licenza dei file presi da useAnimations sono in `scripts/lottie/useanimations/README.md`.
+
+Con `prefers-reduced-motion` nessun movimento: i disegni compaiono già finiti e i valori sono subito quelli finali.
 
 ## Scorciatoie nel workspace
 

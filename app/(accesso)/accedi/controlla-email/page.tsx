@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Icon from "@/components/Icon";
+import LottieAnimation from "@/components/motion/LottieAnimation";
 
 export const metadata: Metadata = { title: "Controlla l'email", robots: { index: false } };
 
@@ -8,7 +8,7 @@ export default async function CheckEmailPage({ searchParams }: { searchParams: P
   const { email } = await searchParams;
   return (
     <div className="auth-card ds-dialog" style={{ textAlign: "center" }}>
-      <Icon name="mail" className="page-head__icon" />
+      <LottieAnimation name="email" width={48} height={48} className="lottie--center" />
       <div>
         <h1 style={{ marginInline: "auto" }}>Controlla l&apos;email</h1>
         <p className="muted" style={{ marginTop: 8 }}>

@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "lottie-react": "3.1.2",
+    "motion": "13.4.4",
     "next": "15.5.27",
     "react": "19.1.9",
     "react-dom": "19.1.9"

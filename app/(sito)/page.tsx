@@ -1,7 +1,9 @@
 import Link from "next/link";
 import AccessForm from "@/components/AccessForm";
 import Icon from "@/components/Icon";
-import { Feature, SectionHead, SignalExample } from "@/components/Marketing";
+import { Feature, SectionHead } from "@/components/Marketing";
+import SignalExample from "@/components/SignalExample";
+import LottieAnimation, { type LottieName } from "@/components/motion/LottieAnimation";
 
 const problems = [
   { icon: "layers" as const, title: "Dispersi", text: "Le variazioni di prezzo e le promozioni stanno in decine di pagine diverse, ogni giorno." },
@@ -9,10 +11,10 @@ const problems = [
   { icon: "clock" as const, title: "In ritardo", text: "Quando il briefing arriva, la promozione è già finita e la risposta è già in ritardo." },
 ];
 
-const steps = [
-  { title: "Annota la fonte", text: "Aggiungi la pagina da cui arriva il dato, con competitor e categoria. Il link resta sempre attaccato al segnale." },
-  { title: "Verifica il segnale", text: "Confronta il prima e il dopo e decidi se è un cambiamento reale o un rumore da scartare." },
-  { title: "Componi il briefing", text: "Scegli i segnali verificati e ottieni un documento in cui ogni affermazione porta alla sua fonte." },
+const steps: { title: string; text: string; art: LottieName }[] = [
+  { art: "fonte", title: "Annota la fonte", text: "Aggiungi la pagina da cui arriva il dato, con competitor e categoria. Il link resta sempre attaccato al segnale." },
+  { art: "verifica", title: "Verifica il segnale", text: "Confronta il prima e il dopo e decidi se è un cambiamento reale o un rumore da scartare." },
+  { art: "briefing", title: "Componi il briefing", text: "Scegli i segnali verificati e ottieni un documento in cui ogni affermazione porta alla sua fonte." },
 ];
 
 const kinds = [
@@ -52,7 +54,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <SignalExample className="ds-pop" />
+          <SignalExample className="ds-pop" startStatus={{ label: "Da verificare", color: "yellow" }} />
         </div>
       </section>
 
@@ -82,13 +84,14 @@ export default function HomePage() {
               </Link>
             </p>
           </div>
-          <ol className="steps reveal">
-            {steps.map((s) => (
+          <ol className="steps steps--art reveal">
+            {steps.map((s, i) => (
               <li key={s.title}>
                 <div>
                   <h3>{s.title}</h3>
                   <p>{s.text}</p>
                 </div>
+                <LottieAnimation name={s.art} width={112} height={78} delay={i * 180} className="steps__art" />
               </li>
             ))}
           </ol>
