@@ -92,7 +92,7 @@ export default async function SourcePage({ params }: { params: Promise<{ id: str
                       <strong>{s.title}</strong>
                     </span>
                     <span className="list__aside">
-                      <StatusTag status={s.status} />
+                      <StatusTag status={s.status} live />
                       <span className="num">{formatShortDate(s.observedAt)}</span>
                     </span>
                   </Link>

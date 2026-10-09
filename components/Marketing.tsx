@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Icon, { type IconName } from "./Icon";
+import type { TagColor } from "@/lib/domain";
 
 export function PageHero({ eyebrow, title, lead, children }: { eyebrow?: string; title: string; lead?: string; children?: React.ReactNode }) {
   return (
@@ -24,10 +25,24 @@ export function PageHero({ eyebrow, title, lead, children }: { eyebrow?: string;
   );
 }
 
-export function Feature({ icon, title, children }: { icon: IconName; title: string; children: React.ReactNode }) {
+// `color` tints the icon with a tag colour; use it only where the colour has a fixed meaning (a signal category).
+export function Feature({
+  icon,
+  title,
+  color,
+  children,
+}: {
+  icon: IconName;
+  title: string;
+  color?: TagColor;
+  children: React.ReactNode;
+}) {
   return (
     <div className="feature reveal">
-      <span className="feature__icon">
+      <span
+        className="feature__icon"
+        style={color ? { color: `var(--tag-${color})`, background: `var(--tag-${color}-bg)` } : undefined}
+      >
         <Icon name={icon} />
       </span>
       <h3>{title}</h3>

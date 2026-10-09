@@ -76,6 +76,12 @@ Due librerie, usate solo nelle pagine che ne hanno bisogno (le altre non le scar
 | `richiesta` | disegnato in codice | /richiedi-accesso/grazie |
 | `email`, `bussola`, `nessun-risultato`, `avviso` | useAnimations (MIT) | controlla l'email, 404, filtri senza risultati, errore |
 
+Animazioni che si ripetono (poche, lente, ferme quando la pagina non è visibile o con il movimento ridotto):
+
+- home: il segnale d'esempio ruota fra prezzo, promozione e assortimento ogni 6 secondi circa; si ferma sotto il puntatore e quando si sceglie un esempio dai pallini;
+- /prodotto/segnali: i quattro stati si illuminano a turno, ciascuno nel suo colore (`components/motion/StatusCycle.tsx`);
+- workspace: lo stato "Da verificare" attuale di un segnale ha un punto che respira (`StatusTag live`); non nello storico né nell'attività.
+
 I JSON si rigenerano con `node scripts/lottie/build.mjs`. I colori non sono fissati nei file: ogni livello ha una classe (`c-ink`, `c-accent`…) che `app/globals.css` collega ai token, così i disegni seguono il tema chiaro e scuro. Le fonti e la licenza dei file presi da useAnimations sono in `scripts/lottie/useanimations/README.md`.
 
 Con `prefers-reduced-motion` nessun movimento: i disegni compaiono già finiti e i valori sono subito quelli finali.

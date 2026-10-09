@@ -2,8 +2,9 @@ import Link from "next/link";
 import AccessForm from "@/components/AccessForm";
 import Icon from "@/components/Icon";
 import { Feature, SectionHead } from "@/components/Marketing";
-import SignalExample from "@/components/SignalExample";
+import SignalExample, { heroSamples } from "@/components/SignalExample";
 import LottieAnimation, { type LottieName } from "@/components/motion/LottieAnimation";
+import { categoryColor } from "@/lib/domain";
 
 const problems = [
   { icon: "layers" as const, title: "Dispersi", text: "Le variazioni di prezzo e le promozioni stanno in decine di pagine diverse, ogni giorno." },
@@ -18,9 +19,9 @@ const steps: { title: string; text: string; art: LottieName }[] = [
 ];
 
 const kinds = [
-  { icon: "tag" as const, title: "Prezzo", text: "Variazioni di listino, piani e condizioni d'acquisto." },
-  { icon: "layers" as const, title: "Assortimento", text: "Prodotti aggiunti, tolti o con nuove varianti." },
-  { icon: "calendar" as const, title: "Promozione", text: "Sconti, offerte e campagne con date di inizio e fine." },
+  { icon: "tag" as const, color: categoryColor.price, title: "Prezzo", text: "Variazioni di listino, piani e condizioni d'acquisto." },
+  { icon: "layers" as const, color: categoryColor.assortment, title: "Assortimento", text: "Prodotti aggiunti, tolti o con nuove varianti." },
+  { icon: "calendar" as const, color: categoryColor.promotion, title: "Promozione", text: "Sconti, offerte e campagne con date di inizio e fine." },
 ];
 
 const audience = [
@@ -54,7 +55,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <SignalExample className="ds-pop" startStatus={{ label: "Da verificare", color: "yellow" }} />
+          <SignalExample className="ds-pop" samples={heroSamples} />
         </div>
       </section>
 
@@ -103,7 +104,7 @@ export default function HomePage() {
           <SectionHead title="Tre tipi di segnale, tutti con una fonte." />
           <div className="grid-3">
             {kinds.map((k) => (
-              <Feature key={k.title} icon={k.icon} title={k.title}>
+              <Feature key={k.title} icon={k.icon} color={k.color} title={k.title}>
                 {k.text}
               </Feature>
             ))}

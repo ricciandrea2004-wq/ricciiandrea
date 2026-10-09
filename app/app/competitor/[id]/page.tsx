@@ -62,7 +62,7 @@ export default async function CompetitorPage({ params }: { params: Promise<{ id:
                   </Link>
                   <div className="row" style={{ gap: 4, marginTop: 4 }}>
                     <CategoryTag category={s.category} />
-                    <StatusTag status={s.status} />
+                    <StatusTag status={s.status} live />
                   </div>
                 </div>
               </li>

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { CtaBand, Feature, PageHero, SectionHead } from "@/components/Marketing";
 import SignalExample from "@/components/SignalExample";
-import { StatusTag } from "@/components/SignalTags";
-import { statuses, statusLabel } from "@/lib/domain";
+import StatusCycle from "@/components/motion/StatusCycle";
+import { categoryColor, statuses, statusLabel } from "@/lib/domain";
 
 export const metadata: Metadata = {
   title: "Segnali",
@@ -29,14 +29,14 @@ export default function SignalsPage() {
         <div className="container">
           <SectionHead title="Tre categorie" lead="Le categorie hanno sempre lo stesso colore, nel workspace e nei briefing." />
           <div className="grid-3">
-            <Feature icon="tag" title="Prezzo">
+            <Feature icon="tag" color={categoryColor.price} title="Prezzo">
               Listini, piani in abbonamento, soglie di spedizione, condizioni di pagamento. Si registra il valore prima e
               dopo.
             </Feature>
-            <Feature icon="layers" title="Assortimento">
+            <Feature icon="layers" color={categoryColor.assortment} title="Assortimento">
               Prodotti nuovi, tolti o con varianti diverse. Si registra cosa c&apos;era e cosa c&apos;è adesso.
             </Feature>
-            <Feature icon="calendar" title="Promozione">
+            <Feature icon="calendar" color={categoryColor.promotion} title="Promozione">
               Sconti, bundle, campagne. Si registrano anche la data di inizio e quella di fine, se la pagina le indica.
             </Feature>
           </div>
@@ -54,6 +54,7 @@ export default function SignalsPage() {
           </div>
           <SignalExample
             className="reveal"
+            category="promotion"
             kind="Promozione · Competitor B"
             title="Spedizione gratuita sopra i 300 euro"
             before="500 €"
@@ -68,18 +69,7 @@ export default function SignalsPage() {
       <section className="section">
         <div className="container">
           <SectionHead title="Quattro stati, una sola regola" lead="Nel briefing entrano solo i segnali verificati." />
-          <ul className="list reveal" style={{ maxWidth: 760 }}>
-            {statuses.map((s) => (
-              <li key={s}>
-                <div className="list__item">
-                  <span style={{ width: 120, flex: "none" }}>
-                    <StatusTag status={s} />
-                  </span>
-                  <span className="list__main">{statusText[s]}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <StatusCycle items={statuses.map((s) => ({ status: s, text: statusText[s] }))} />
           <p className="visually-hidden">Stati: {statuses.map((s) => statusLabel[s]).join(", ")}.</p>
         </div>
       </section>

@@ -1,5 +1,13 @@
 import type { TagColor } from "@/lib/domain";
 
-export default function Tag({ color, children }: { color: TagColor; children: React.ReactNode }) {
-  return <span className={`tag tag-${color}`}>{children}</span>;
+export default function Tag({
+  color,
+  className = "",
+  children,
+}: {
+  color: TagColor;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return <span className={`tag tag-${color} ${className}`.trim()}>{children}</span>;
 }
