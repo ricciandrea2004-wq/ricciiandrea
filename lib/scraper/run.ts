@@ -74,6 +74,13 @@ export async function runScrape(store: Store, options: ScrapeRunOptions = {}) {
     }
 
     const robots = robotsByOrigin.get(url.origin);
+    // robots.txt already read and the page is off limits: no request, so no need to wait.
+    if (robots && !robots.unavailable && !robots.isAllowed(url.pathname + url.search)) {
+      const message = "robots.txt non permette di leggere questa pagina.";
+      await store.recordCheck(source.id, { status: "blocked", lastCheckedAt: new Date().toISOString(), lastError: message });
+      done("blocked", { message });
+      continue;
+    }
     const crawlDelayMs = Math.min((robots?.crawlDelaySeconds ?? 0) * 1000, MAX_CRAWL_DELAY_MS);
     const wait = Math.max(0, (lastHitByHost.get(url.host) ?? 0) + Math.max(minDelay, crawlDelayMs) - Date.now());
     if (Date.now() - startedAt + wait > budget) {
