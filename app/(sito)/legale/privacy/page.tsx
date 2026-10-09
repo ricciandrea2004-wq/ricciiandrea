@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage title="Informativa privacy" updated="9 ottobre 2026">
       <p>
-        Questa informativa spiega quali dati personali raccoglie Competia.Work, perché, per quanto tempo e quali diritti
+        Questa informativa spiega quali dati personali raccoglie competia.work, perché, per quanto tempo e quali diritti
         hai, ai sensi degli articoli 13 e 14 del Regolamento (UE) 2016/679 (GDPR).
       </p>
 

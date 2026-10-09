@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Cookie policy", description: "Quali 
 export default function CookiePage() {
   return (
     <LegalPage title="Cookie policy" updated="9 ottobre 2026">
-      <p>Competia.Work usa solo i cookie e gli spazi di memoria del browser necessari a far funzionare il sito.</p>
+      <p>competia.work usa solo i cookie e gli spazi di memoria del browser necessari a far funzionare il sito.</p>
 
       <h2>Cosa usiamo</h2>
       <ul>

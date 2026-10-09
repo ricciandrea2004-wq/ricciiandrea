@@ -1,4 +1,4 @@
-# Competia.Work · sito
+# competia.work · sito
 
 Il sito completo di Competia in Next.js (App Router, TypeScript): pagine pubbliche, accesso, workspace `/app` e `/analytics`. Segue l'[albero delle pagine](../sitemap/README.md) approvato il 9 ottobre 2026 (fase F1) e il [design system](../design-system/README.md) ispirato a Notion.
 

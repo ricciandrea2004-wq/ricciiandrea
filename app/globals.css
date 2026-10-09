@@ -472,14 +472,19 @@ fieldset {
   font-size: 17px;
 }
 
-.logo img {
+.logo .logo-mark {
   width: 22px;
   height: 22px;
+  flex: none;
 }
 
-.logo span span {
-  color: var(--text-secondary);
-  font-weight: 500;
+.wordmark {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.wordmark-dot {
+  color: var(--accent-text);
 }
 
 .site-nav {

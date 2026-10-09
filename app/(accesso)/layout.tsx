@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { LogoMark, Wordmark } from "@/components/Logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="auth-shell">
       <header>
         <Link href="/" className="logo">
-          <img src="/favicon.svg" alt="" width={22} height={22} />
-          <span>Competia<span>.Work</span></span>
+          <LogoMark />
+          <Wordmark />
         </Link>
       </header>
       <main className="auth-main">{children}</main>

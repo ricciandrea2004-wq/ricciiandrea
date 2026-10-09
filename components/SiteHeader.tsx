@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
 import { headerLinks, productLinks } from "@/lib/nav";
+import { LogoMark, Wordmark } from "@/components/Logo";
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -47,9 +48,9 @@ export default function SiteHeader() {
   return (
     <header className="site-header" data-scrolled={scrolled || mobileOpen}>
       <div className="container site-header__inner">
-        <Link href="/" className="logo" aria-label="Competia.Work, home">
-          <img src="/favicon.svg" alt="" width={22} height={22} />
-          <span>Competia<span>.Work</span></span>
+        <Link href="/" className="logo" aria-label="competia.work, home">
+          <LogoMark />
+          <Wordmark />
         </Link>
 
         <nav className="site-nav" aria-label="Principale">

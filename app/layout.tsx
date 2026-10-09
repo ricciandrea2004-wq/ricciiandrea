@@ -7,10 +7,10 @@ const description = "Segnali competitivi verificabili su prezzi, assortimento e 
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.competia.work"),
-  title: { default: "Competia.Work · Intelligence commerciale B2B", template: "%s · Competia.Work" },
+  title: { default: "competia.work · Intelligence commerciale B2B", template: "%s · competia.work" },
   description,
-  applicationName: "Competia.Work",
-  openGraph: { type: "website", locale: "it_IT", siteName: "Competia.Work", description },
+  applicationName: "competia.work",
+  openGraph: { type: "website", locale: "it_IT", siteName: "competia.work", description },
   twitter: { card: "summary" },
   icons: { icon: "/favicon.svg" },
 };

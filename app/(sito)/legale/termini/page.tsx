@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import LegalPage from "@/components/LegalPage";
 
-export const metadata: Metadata = { title: "Termini di servizio", description: "Le condizioni d'uso di Competia.Work." };
+export const metadata: Metadata = { title: "Termini di servizio", description: "Le condizioni d'uso di competia.work." };
 
 export default function TermsPage() {
   return (
     <LegalPage title="Termini di servizio" updated="9 ottobre 2026">
       <p>
-        Questi termini regolano l&apos;uso di Competia.Work da parte delle aziende clienti e delle persone che fanno parte dei
+        Questi termini regolano l&apos;uso di competia.work da parte delle aziende clienti e delle persone che fanno parte dei
         loro team. Il servizio è rivolto solo a professionisti e imprese.
       </p>
 
       <h2>Il servizio</h2>
       <p>
-        Competia.Work è uno spazio di lavoro per raccogliere fonti pubbliche, registrare segnali competitivi e comporre
+        competia.work è uno spazio di lavoro per raccogliere fonti pubbliche, registrare segnali competitivi e comporre
         briefing. Durante il programma pilota il servizio è offerto su invito e può cambiare.
       </p>
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ThemeSwitch from "./ThemeSwitch";
 import { footerGroups } from "@/lib/nav";
+import { LogoMark, Wordmark } from "@/components/Logo";
 
 export default function SiteFooter() {
   return (
@@ -9,7 +10,8 @@ export default function SiteFooter() {
         <div className="footer-grid">
           <div>
             <Link href="/" className="logo">
-              <span>Competia<span>.Work</span></span>
+              <LogoMark />
+              <Wordmark />
             </Link>
             <p className="muted" style={{ marginTop: 12, maxWidth: 300 }}>
               Segnali competitivi su prezzi, assortimento e promozioni, sempre con la fonte.
@@ -29,7 +31,7 @@ export default function SiteFooter() {
           ))}
         </div>
         <div className="footer-bottom">
-          <span>© 2026 Competia.Work</span>
+          <span>© 2026 competia.work</span>
           <ThemeSwitch />
         </div>
       </div>

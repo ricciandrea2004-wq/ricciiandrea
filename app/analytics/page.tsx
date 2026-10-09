@@ -3,6 +3,7 @@ import Link from "next/link";
 import Callout from "@/components/Callout";
 import Icon from "@/components/Icon";
 import { getAnalytics, type Point, type Range } from "@/lib/umami";
+import { LogoMark, Wordmark } from "@/components/Logo";
 
 export const metadata: Metadata = { title: "Analytics del sito", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -90,7 +91,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     <div className="container" style={{ paddingBlock: 32 }}>
       <div className="row" style={{ justifyContent: "space-between", marginBottom: 32 }}>
         <Link href="/app" className="logo">
-          <span>Competia<span>.Work</span></span>
+          <LogoMark />
+          <Wordmark />
         </Link>
         <Link href="/app" className="btn btn-ghost">
           <Icon name="arrowLeft" />

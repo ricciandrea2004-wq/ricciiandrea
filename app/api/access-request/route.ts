@@ -10,11 +10,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CONFIRMATION_TEXT = [
   "Ciao,",
   "",
-  "grazie per aver richiesto l'accesso a Competia.Work. Ti scriveremo appena lo spazio di pilot sarà disponibile.",
+  "grazie per aver richiesto l'accesso a competia.work. Ti scriveremo appena lo spazio di pilot sarà disponibile.",
   "",
   "Se non sei stato tu a fare questa richiesta, puoi ignorare questa email.",
   "",
-  "Competia.Work",
+  "competia.work",
 ].join("\n");
 
 function fail(error: string, status: number) {
