@@ -11,8 +11,15 @@ export const metadata: Metadata = {
   description,
   applicationName: "competia.work",
   openGraph: { type: "website", locale: "it_IT", siteName: "competia.work", description },
-  twitter: { card: "summary" },
-  icons: { icon: "/favicon.svg" },
+  // The Open Graph image is app/opengraph-image.png (built by scripts/brand/render.mjs).
+  twitter: { card: "summary_large_image" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

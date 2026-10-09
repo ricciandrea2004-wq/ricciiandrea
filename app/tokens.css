@@ -25,6 +25,11 @@
   --accent-soft: rgba(26, 111, 208, 0.1);
   --on-accent: #ffffff;
 
+  /* Logo: il simbolo "c." si inverte nel tema scuro, come il favicon */
+  --logo-tile: #37352f;
+  --logo-glyph: #ffffff;
+  --logo-dot: #5aa5e6;
+
   /* Tag: testo / sfondo */
   --tag-gray: #6b6a66;    --tag-gray-bg: #f1f1ef;
   --tag-blue: #2b6f99;    --tag-blue-bg: #e7f3f8;
@@ -118,6 +123,9 @@
     --accent-hover: #2577d6;
     --accent-text: #5aa5e6;
     --accent-soft: rgba(90, 165, 230, 0.16);
+    --logo-tile: #dfdfde;
+    --logo-glyph: #191919;
+    --logo-dot: #1a6fd0;
     --tag-gray: #a5a5a5;    --tag-gray-bg: #2f2f2f;
     --tag-blue: #6cb3e0;    --tag-blue-bg: #143a4e;
     --tag-purple: #b896e6;  --tag-purple-bg: #3c2d49;
@@ -147,6 +155,9 @@
   --accent-hover: #2577d6;
   --accent-text: #5aa5e6;
   --accent-soft: rgba(90, 165, 230, 0.16);
+  --logo-tile: #dfdfde;
+  --logo-glyph: #191919;
+  --logo-dot: #1a6fd0;
   --tag-gray: #a5a5a5;    --tag-gray-bg: #2f2f2f;
   --tag-blue: #6cb3e0;    --tag-blue-bg: #143a4e;
   --tag-purple: #b896e6;  --tag-purple-bg: #3c2d49;
