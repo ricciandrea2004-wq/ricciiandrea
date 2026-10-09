@@ -1,0 +1,16 @@
+Oggetto: [competia.work] 2 pagine non rispondono
+
+Controllo delle 9 ottobre alle ore 08:00: 2 su 7 indirizzi non hanno risposto 200.
+
+- https://www.competia.work/prodotto: risposta 500, 412 ms
+- https://www.competia.work/accedi: nessuna risposta (oltre 10 s), 10003 ms
+
+Cosa guardare per primo:
+1. Lo stato dell'ultimo deploy su Vercel: https://vercel.com/andrea-riccis-projects-6714dfee/competia-work
+2. Gli errori delle funzioni nei log di Vercel.
+3. Se l'ultimo deploy è rotto, si torna al precedente con Instant Rollback.
+
+—
+competia.work · Sai cosa cambia sul mercato, con la fonte in mano.
+Avviso interno del controllo automatico del sito. Va solo agli indirizzi del team.
+Privacy: https://www.competia.work/legale/privacy · Contatti: ciao@competia.work

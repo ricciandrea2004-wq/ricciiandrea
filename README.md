@@ -33,7 +33,13 @@ Verifica: `npm run typecheck` e `npm run build`.
 | Variabile | Serve a |
 |---|---|
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | salvare le richieste di accesso |
-| `RESEND_API_KEY`, `RESEND_FROM` | email di conferma della richiesta |
+| `RESEND_API_KEY`, `RESEND_FROM` | email di conferma della richiesta e tutte le email di `lib/email/` |
+| `EMAIL_SENDING` | `off` (predefinito: nessun invio), `interno` (solo agli indirizzi del team), `on` (a tutti) |
+| `EMAIL_INTERNAL_TO` | indirizzi del team, separati da virgola (predefinito `ciao@competia.work`) |
+| `CRON_SECRET` | chiude le rotte `/api/cron/*`; Vercel Cron lo manda da solo |
+| `EMAIL_EVENTS_SECRET` | chiude `POST /api/email/evento` |
+| `SEND_EMAIL_HOOK_SECRET` | firma dell'hook "Send Email" di Supabase Auth (`v1,whsec_…`) |
+| `EMAIL_SOGLIA_DA_VERIFICARE_GIORNI` | giorni prima dell'avviso sui segnali fermi (predefinito 3) |
 | `ANALYTICS_USER`, `ANALYTICS_PASSWORD` | aprire `/analytics` |
 | `UMAMI_API_URL`, `UMAMI_WEBSITE_ID` | dati di Umami |
 | `UMAMI_API_KEY` (Umami Cloud) oppure `UMAMI_API_TOKEN` (self-hosted) | autenticazione verso Umami |
@@ -57,6 +63,8 @@ app/
   api/access-request/   endpoint del modulo di accesso
   api/v1/          API: competitor, fonti, segnali, controllo
   api/cron/scrape/ controllo giornaliero (Vercel Cron)
+  api/email/       invii a evento (evento) e hook di Supabase Auth (auth-hook)
+  api/cron/        riepilogo settimanale, segnali fermi, controllo del sito (orari in vercel.json)
   not-found.tsx, error.tsx, global-error.tsx, robots.ts, sitemap.ts
 components/        componenti condivisi; workspace/ per la shell del workspace
 components/motion/ animazioni (motion e Lottie)
@@ -69,8 +77,10 @@ lib/
   store/           dati dell'API: in memoria (demo) o Supabase
 supabase/migrations/   schema SQL (da applicare con l'OK di Andrea)
 docs/api.md      documentazione dell'API
+  email/           template e invio delle email (vedi "Email")
 middleware.ts      password su /analytics
 public/lottie/     animazioni Lottie (generate da scripts/lottie/build.mjs)
+public/email/      GIF e PNG delle email (generate da scripts/email/build-assets.mjs)
 ```
 
 `app/tokens.css` è una copia di `../design-system/tokens.css`: se cambia uno, va aggiornato l'altro.
@@ -104,6 +114,35 @@ Con `prefers-reduced-motion` nessun movimento: i disegni compaiono già finiti e
 Il logo animato (`components/motion/AnimatedLogo.tsx`) dura 1,2 secondi e parte una volta: compare il simbolo "c.", si scrivono le lettere, poi i due punti blu cadono al loro posto. Il logo statico (`components/Logo.tsx`) resta sotto e tiene lo spazio: è quello che si vede senza JavaScript, con il movimento ridotto e dopo una navigazione interna. Le lettere del wordmark sono i contorni di Inter 700, presi una volta con `scripts/lottie/outline-wordmark.mjs` e salvati in `scripts/lottie/wordmark.json`.
 
 Il simbolo usa i token `--logo-tile`, `--logo-glyph` e `--logo-dot`: scuro nel tema chiaro, chiaro nel tema scuro. `public/favicon.svg` fa lo stesso con `prefers-color-scheme`, così resta leggibile anche nelle schede scure; deve restare un SVG pulito, senza metadati. `favicon.ico`, `apple-touch-icon.png` e `app/opengraph-image.png` si rigenerano con `scripts/brand/render.mjs`.
+
+## Email
+
+Tutte le email stanno in `lib/email/` e usano lo stesso motore grafico del sito: `lib/email/tokens.ts` è generato da `app/tokens.css` (`npm run email:tokens`, oppure `node scripts/email/sync-tokens.mjs --check` per verificare), con Inter e la catena di font di Notion, i neutri caldi, l'accento blu e i colori dei tag con lo stesso significato del workspace. Ogni email ha la versione HTML e quella in solo testo.
+
+| Template | Quando parte | Chi lo chiama |
+|---|---|---|
+| `richiesta-ricevuta` | qualcuno chiede l'accesso | `POST /api/email/evento`; la rotta `/api/access-request` manda ancora la sua conferma in testo (è di un altro thread, si collega quando la si tocca) |
+| `accesso-approvato` | si apre un posto o un membro invita un collega | `POST /api/email/evento`, oppure l'hook di Supabase per gli inviti (`invite`) |
+| `link-accesso` | accesso con link via email, con il codice a 6 cifre | hook "Send Email" di Supabase Auth → `/api/email/auth-hook` |
+| `benvenuto` | primo accesso | `POST /api/email/evento` (da un webhook di Supabase o da `/auth/callback` quando l'accesso sarà collegato) |
+| `riepilogo-settimanale` | ogni lunedì alle 7:00 UTC | Vercel Cron → `/api/cron/riepilogo-settimanale` |
+| `segnali-da-verificare` | un segnale resta "Da verificare" oltre la soglia (una volta per segnale) | Vercel Cron ogni mattina → `/api/cron/segnali-da-verificare` |
+| `sito-non-risponde` | una pagina pubblica non risponde 200 | Vercel Cron ogni mattina → `/api/cron/controllo-sito`, solo al team |
+
+Interruttore: niente parte finché `EMAIL_SENDING` non è `interno` o `on`. Con `off` le email vengono preparate e scritte nei log, ma non inviate. Il riepilogo e l'avviso sui segnali fermi leggono i dati da `lib/email/data.ts`, che oggi restituisce zero destinatari perché il workspace usa ancora dati di esempio: quando arriva lo schema del database si sostituiscono le due funzioni con le query.
+
+I cron sono una volta al giorno al massimo perché il piano Hobby di Vercel non ne permette di più frequenti. Il controllo del sito gira su Vercel stesso: vede pagine e deploy rotti, non un'interruzione completa di Vercel.
+
+Animazioni: le email non eseguono JavaScript e quasi nessuna animazione CSS, quindi il movimento arriva con GIF generate dagli stessi file Lottie del sito e con gli stessi token (`NODE_PATH=$(npm root -g) node scripts/email/build-assets.mjs`, serve Playwright e ffmpeg). Il logo si disegna una volta come nell'header, ogni email ha il suo disegno (richiesta, verifica, email, fonte, briefing, avviso) e il tag "Da verificare" ha il punto che respira come nel workspace. Outlook su Windows riceve il PNG fermo (mostrerebbe solo il primo fotogramma), così come chi ha attivo il movimento ridotto; Apple Mail e iOS Mail ricevono la versione scura con il tema scuro.
+
+Anteprime: `npm run email:anteprime` (con `NODE_PATH=$(npm root -g)` se Playwright è installato globalmente) scrive in `scripts/email/anteprime/` l'HTML, il testo e gli screenshot chiaro e scuro di ogni template, con i dati di `lib/email/esempi.ts`.
+
+Per accendere:
+
+1. `EMAIL_SENDING=interno` su Vercel: arrivano solo a `ciao@competia.work` (serve che la casella esista).
+2. Login con link: in Supabase, Authentication → Hooks → Send Email → HTTPS `https://www.competia.work/api/email/auth-hook`; il segreto generato va in `SEND_EMAIL_HOOK_SECRET`.
+3. Eventi: un valore casuale in `EMAIL_EVENTS_SECRET`, lo stesso nel webhook che chiama `/api/email/evento`.
+4. Quando è tutto provato, `EMAIL_SENDING=on`.
 
 ## Scorciatoie nel workspace
 
