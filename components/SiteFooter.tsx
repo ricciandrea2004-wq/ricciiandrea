@@ -5,7 +5,7 @@ import AnimatedLogo from "@/components/motion/AnimatedLogo";
 
 export default function SiteFooter() {
   return (
-    <footer className="site-footer">
+    <footer className="site-footer ink">
       <div className="container">
         <div className="footer-grid">
           <div>

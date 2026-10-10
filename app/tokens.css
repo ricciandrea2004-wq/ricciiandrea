@@ -30,6 +30,11 @@
   --logo-glyph: #ffffff;
   --logo-dot: #5aa5e6;
 
+  /* Superficie inchiostro: le sezioni scure delle pagine pubbliche (classe .ink) */
+  --ink: #1d1c1a;
+  /* Fascia piena nel colore d'accento (pagine pubbliche); nel tema scuro un po' più profonda */
+  --accent-band: #1a6fd0;
+
   /* Tag: testo / sfondo */
   --tag-gray: #6b6a66;    --tag-gray-bg: #f1f1ef;
   --tag-blue: #2b6f99;    --tag-blue-bg: #e7f3f8;
@@ -45,7 +50,11 @@
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
   --font-mono: "iA Writer Mono", Nitti, ui-monospace, SFMono-Regular, Menlo, Consolas, Courier, monospace;
   --font-features: "lnum" 1, "locl" 0;
-  --text-display: clamp(40px, 6vw, 64px);
+  /* Contrasto di peso: titoli pubblici a 800, sezioni a 700, testo a 400. */
+  --weight-display: 800;
+  --weight-heading: 700;
+  --text-display: clamp(40px, 6.4vw, 76px);
+  --text-section: clamp(28px, 3.6vw, 44px); /* titoli di sezione delle pagine pubbliche */
   --text-h1: 40px;
   --text-h2: 30px;
   --text-h3: 24px;
@@ -130,6 +139,8 @@
     --logo-tile: #dfdfde;
     --logo-glyph: #191919;
     --logo-dot: #1a6fd0;
+    --ink: #0f0f0e;
+    --accent-band: #1659a8;
     --tag-gray: #a5a5a5;    --tag-gray-bg: #2f2f2f;
     --tag-blue: #6cb3e0;    --tag-blue-bg: #143a4e;
     --tag-purple: #b896e6;  --tag-purple-bg: #3c2d49;
@@ -143,7 +154,8 @@
   }
 }
 
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+.ink {
   color-scheme: dark;
   --bg: #191919;
   --bg-subtle: #202020;
@@ -172,6 +184,21 @@
   --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 4px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 3px 6px rgba(0, 0, 0, 0.3), 0 9px 24px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 5px 10px rgba(0, 0, 0, 0.35), 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Superficie inchiostro: prende i token del tema scuro (blocco qui sopra) in qualunque tema,
+   così testo, tag, logo e moduli restano leggibili. Nel tema scuro è più profonda della pagina. */
+:root[data-theme="dark"] {
+  --ink: #0f0f0e;
+  --accent-band: #1659a8;
+}
+
+.ink {
+  --bg: var(--ink);
+  --bg-subtle: color-mix(in srgb, var(--ink) 92%, #ffffff);
+  --bg-raised: color-mix(in srgb, var(--ink) 88%, #ffffff);
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* ---------- Animazioni ---------- */
