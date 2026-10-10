@@ -162,7 +162,7 @@ I link delle email li costruisce `/api/email/auth-hook` e puntano al sito da cui
 
 Per accenderlo in Supabase (progetto `competia`):
 
-1. Authentication → URL Configuration: Site URL `https://www.competia.work`; Redirect URLs `https://www.competia.work/**` e, per le anteprime, `https://*-andrea-riccis-projects-6714dfee.vercel.app/**`.
+1. Authentication → URL Configuration: Site URL `https://www.competia.work`; Redirect URLs `https://www.competia.work/**` e, per le anteprime, `https://competia-work-*-andrea-riccis-projects-6714dfee.vercel.app/**`.
 2. Authentication → Hooks → Send Email → HTTPS `https://www.competia.work/api/email/auth-hook`; il segreto generato va in `SEND_EMAIL_HOOK_SECRET` su Vercel (Production e Preview).
 3. Authentication → Sign In / Providers → Email: lasciare disattivate le iscrizioni libere ("Allow new users to sign up"): gli account si creano con Authentication → Users → Invite user.
 4. `EMAIL_SENDING` su Vercel: con `off` l'hook risponde 503 e chi prova a entrare vede "Non siamo riusciti a mandare l'email"; con `interno` arrivano solo agli indirizzi di `EMAIL_INTERNAL_TO`; con `on` a tutti.
