@@ -194,9 +194,9 @@ code {
 
 .display {
   font-size: var(--text-display);
-  line-height: 1.08;
-  letter-spacing: var(--tracking-display);
-  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.042em;
+  font-weight: var(--weight-display);
 }
 
 .divider {
@@ -229,9 +229,10 @@ code {
 }
 
 .btn-lg {
-  height: 40px;
-  padding: 0 var(--space-4);
+  height: 44px;
+  padding: 0 20px;
   font-size: 15px;
+  font-weight: 600;
 }
 
 .btn-primary {
@@ -639,13 +640,172 @@ fieldset {
 
 /* ---------- Sito pubblico: sezioni ---------- */
 
+/* Carattere delle pagine pubbliche: contrasto di peso netto (800 / 700 / 400),
+   titoli di sezione grandi, occhielli nel colore d'accento. Il workspace resta com'è. */
+.site h2 {
+  font-size: var(--text-section);
+  font-weight: var(--weight-heading);
+  line-height: 1.1;
+  letter-spacing: -0.032em;
+}
+
+.site h3 {
+  font-weight: var(--weight-heading);
+  letter-spacing: -0.015em;
+}
+
+.site .eyebrow {
+  color: var(--accent-text);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* Nella scheda del segnale l'occhiello accompagna il punto della categoria: resta neutro. */
+.site .signal-card .eyebrow {
+  color: var(--text-secondary);
+}
+
+.site .lead {
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.55;
+}
+
+.site .lead strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.site .btn-primary {
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+/* Parole chiave del titolo nel colore d'accento. */
+.hl {
+  color: var(--accent-text);
+}
+
+/* Fondo a griglia sottile con un alone blu: hero della home e testate delle pagine. */
+.hero,
+.page-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hero::before,
+.page-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: center top;
+  -webkit-mask-image: radial-gradient(ellipse 75% 85% at 65% 30%, #000 20%, transparent 78%);
+  mask-image: radial-gradient(ellipse 75% 85% at 65% 30%, #000 20%, transparent 78%);
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -8%;
+  top: 2%;
+  width: min(760px, 70vw);
+  aspect-ratio: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%);
+  pointer-events: none;
+}
+
 .hero {
-  padding-block: clamp(56px, 10vw, 120px) clamp(48px, 8vw, 96px);
+  padding-block: clamp(56px, 10vw, 128px) clamp(56px, 9vw, 112px);
+}
+
+.hero__note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.hero__note::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-text);
+}
+
+/* Fascia blu con i numeri del prodotto: il punto in cui l'accento si prende tutta la larghezza. */
+.facts {
+  background: var(--accent-band);
+  color: var(--on-accent);
+  padding-block: clamp(40px, 6vw, 64px);
+}
+
+.facts__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5) clamp(24px, 4vw, 56px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.facts li {
+  padding-top: var(--space-4);
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.facts__num {
+  display: block;
+  font-size: clamp(48px, 6vw, 76px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.facts__label {
+  display: block;
+  margin-top: var(--space-3);
+  max-width: 32ch;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.facts__label strong {
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .facts__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .facts li {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .facts__num {
+    font-size: 48px;
+  }
+
+  .facts__label {
+    margin-top: 2px;
+  }
 }
 
 .hero__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: clamp(32px, 6vw, 80px);
   align-items: center;
 }
@@ -664,7 +824,8 @@ fieldset {
 }
 
 .page-hero {
-  padding-block: clamp(48px, 8vw, 96px) clamp(32px, 5vw, 56px);
+  padding-block: clamp(56px, 9vw, 112px) clamp(40px, 6vw, 72px);
+  background: var(--bg-subtle);
 }
 
 .page-hero .lead {
@@ -684,12 +845,12 @@ fieldset {
 }
 
 .section__head {
-  max-width: 720px;
-  margin-bottom: var(--space-7);
+  max-width: 760px;
+  margin-bottom: clamp(32px, 5vw, 56px);
 }
 
 .section__head p {
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .grid-3 {
@@ -724,9 +885,22 @@ fieldset {
   }
 }
 
+/* Nelle griglie le caratteristiche diventano schede. Una categoria di segnale porta il suo
+   colore (fisso) sul bordo alto; le altre restano neutre. */
+.feature {
+  padding: clamp(20px, 2.4vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.feature--cat {
+  border-top: 4px solid var(--cat);
+}
+
 .feature h3 {
   font-size: var(--text-h4);
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
 }
 
 .feature p {
@@ -737,20 +911,16 @@ fieldset {
 .feature__icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
-}
-
-.section--subtle .feature__icon {
-  background: var(--bg);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 .feature__icon svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 .steps {
@@ -763,23 +933,24 @@ fieldset {
 .steps li {
   counter-increment: step;
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr);
   gap: var(--space-4);
   padding-block: var(--space-5);
   border-top: 1px solid var(--border);
 }
 
+.steps li:first-child {
+  border-top: 2px solid var(--text);
+}
+
 .steps li::before {
-  content: counter(step);
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  background: var(--bg-hover);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-secondary);
+  content: counter(step, decimal-leading-zero);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-text);
 }
 
 .steps h3 {
@@ -805,21 +976,66 @@ fieldset {
   gap: var(--space-3);
 }
 
+/* Spunte nel colore d'accento: il verde significa "Verificato" e resta ai segnali. */
 .checklist svg {
   width: 20px;
   height: 20px;
-  color: var(--tag-green);
+  color: var(--accent-text);
   margin-top: 2px;
 }
 
+.checklist--lg {
+  gap: 0;
+}
+
+.checklist--lg li {
+  grid-template-columns: 24px minmax(0, 1fr);
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--border-strong);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.checklist--lg li:last-child {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.checklist--lg svg {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+}
+
+/* Invito finale: superficie inchiostro (.ink) con un alone blu. */
 .cta-band {
-  padding: clamp(32px, 6vw, 64px);
-  border-radius: var(--radius-lg);
-  background: var(--bg-subtle);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(32px, 6vw, 80px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+}
+
+.cta-band::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -12%;
+  top: -55%;
+  width: min(680px, 90%);
+  aspect-ratio: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 50%, transparent), transparent 64%);
+  pointer-events: none;
 }
 
 .cta-band h2 {
-  max-width: 640px;
+  max-width: 18ch;
+  font-size: clamp(30px, 4.6vw, 56px);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.038em;
+  line-height: 1.04;
 }
 
 /* Segnale d'esempio */
@@ -828,7 +1044,7 @@ fieldset {
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   padding: var(--space-5);
 }
 
@@ -928,6 +1144,10 @@ fieldset {
   padding-block: var(--space-8) var(--space-6);
   margin-top: var(--space-9);
   font-size: var(--text-sm);
+}
+
+.site-footer.ink {
+  margin-top: 0;
 }
 
 .footer-grid {
@@ -2046,13 +2266,17 @@ a.list__item:hover {
 
 /* Passi con disegno: numero, testo, disegno. */
 .steps--art li {
-  grid-template-columns: 32px minmax(0, 1fr) 112px;
+  grid-template-columns: 52px minmax(0, 1fr) 112px;
   align-items: start;
 }
 
 @media (max-width: 520px) {
+  .steps li::before {
+    font-size: 24px;
+  }
+
   .steps--art li {
-    grid-template-columns: 28px minmax(0, 1fr) 80px;
+    grid-template-columns: 40px minmax(0, 1fr) 80px;
     gap: var(--space-3);
   }
 
