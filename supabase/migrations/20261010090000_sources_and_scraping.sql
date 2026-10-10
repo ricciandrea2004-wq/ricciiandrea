@@ -1,5 +1,5 @@
 -- Competia: competitors, sources, snapshots and signals for the scraping API (first version).
--- NOT APPLIED to the live project. Apply only after Andrea's OK, in its own step.
+-- Applied to the live project on 2026-10-10 with Andrea's OK.
 --
 -- Access model for now: RLS is on and there are no policies, so only the service role
 -- (used server side by the API with SUPABASE_SERVICE_ROLE_KEY) can read or write.
