@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { standardWebhookOk } from "@/lib/email/auth";
+import { confirmLink } from "@/lib/email/auth-link";
 import { sendEmail } from "@/lib/email/send";
 
 export const runtime = "nodejs";
@@ -32,13 +33,9 @@ export async function POST(request: Request) {
   const payload = JSON.parse(raw) as Payload;
   const email = payload.user?.email;
   const d = payload.email_data;
-  const supabase = process.env.SUPABASE_URL;
-  if (!email || !d?.token_hash || !d.email_action_type || !supabase) return hookError(400, "Dati mancanti");
+  if (!email || !d?.token_hash || !d.email_action_type) return hookError(400, "Dati mancanti");
 
-  const verify = (hash: string) =>
-    `${supabase}/auth/v1/verify?token=${encodeURIComponent(hash)}&type=${encodeURIComponent(d.email_action_type!)}` +
-    (d.redirect_to ? `&redirect_to=${encodeURIComponent(d.redirect_to)}` : "");
-  const url = verify(d.token_hash);
+  const url = confirmLink(d.token_hash, d.email_action_type, d.redirect_to, d.site_url);
   const key = `auth-${d.token_hash.slice(0, 32)}`;
 
   const result =
@@ -50,7 +47,7 @@ export async function POST(request: Request) {
           data: {
             url,
             codice: d.token,
-            tipo: d.email_action_type === "email_change" ? "conferma" : "accesso",
+            tipo: d.email_action_type === "recovery" ? "recupero" : d.email_action_type === "email_change" || d.email_action_type === "signup" ? "conferma" : "accesso",
           },
           idempotencyKey: key,
         });

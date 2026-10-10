@@ -5,6 +5,7 @@ import type { PaletteEntry } from "@/components/workspace/CommandPalette";
 import { briefings, competitors, organization, signals, sources } from "@/lib/demo-data";
 import { categoryLabel, statusLabel } from "@/lib/domain";
 import { workspaceLinks } from "@/lib/nav";
+import { currentUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: { default: "Workspace", template: "%s · competia.work" },
@@ -32,13 +33,14 @@ function paletteEntries(): PaletteEntry[] {
   ];
 }
 
-export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+export default async function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const toVerify = signals.filter((s) => s.status === "to_verify").length;
+  const user = await currentUser();
   return (
     <MotionProvider>
-      <WorkspaceShell orgName={organization.name} toVerify={toVerify} entries={paletteEntries()}>
+      <WorkspaceShell orgName={organization.name} userEmail={user?.email} toVerify={toVerify} entries={paletteEntries()}>
         <div className="demo-banner">
-          Dati di esempio: il workspace non è ancora collegato al database e l&apos;accesso non è ancora protetto.
+          Dati di esempio: il workspace non è ancora collegato al database.
         </div>
         {children}
       </WorkspaceShell>
