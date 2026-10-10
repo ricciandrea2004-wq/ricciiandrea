@@ -8,6 +8,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import Icon from "../Icon";
 import CommandPalette, { type PaletteEntry } from "./CommandPalette";
 import { workspaceLinks } from "@/lib/nav";
+import { signOut } from "@/lib/auth/actions";
 import { dur, easeIn, easeOut } from "../motion/shared";
 
 type ShellApi = {
@@ -30,11 +31,13 @@ const COLLAPSE_KEY = "competia-sidebar-collapsed";
 
 export default function WorkspaceShell({
   orgName,
+  userEmail,
   toVerify,
   entries,
   children,
 }: {
   orgName: string;
+  userEmail?: string;
   toVerify: number;
   entries: PaletteEntry[];
   children: React.ReactNode;
@@ -167,6 +170,12 @@ export default function WorkspaceShell({
                 <Icon name="arrowLeft" />
                 Torna al sito
               </Link>
+              <form action={signOut}>
+                <button type="submit" className="ws-nav__item" title={userEmail ? `Esci (${userEmail})` : "Esci"}>
+                  <Icon name="lock" />
+                  Esci
+                </button>
+              </form>
             </div>
           </div>
         </aside>
