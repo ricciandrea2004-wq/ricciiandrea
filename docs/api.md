@@ -51,8 +51,8 @@ Errore:
 | `unauthorized` | 401 | token mancante o sbagliato |
 | `bad_request` | 400 | corpo o parametri non validi; `details` dice quali |
 | `not_found` | 404 | fonte o competitor inesistente |
-| `conflict` | 409 | la fonte esiste già per quel competitor |
-| `not_configured` | 503 | manca la variabile del token |
+| `conflict` | 409 | la fonte esiste già per quel competitor, o c'è già un competitor con lo stesso nome |
+| `not_configured` | 503 | manca la variabile del token, oppure `COMPETIA_STORE=supabase` senza le variabili del database |
 | `internal` | 500 | errore inatteso (finisce nei log di Vercel) |
 
 ## Endpoint
@@ -65,6 +65,16 @@ Elenco dei competitor.
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" $API/competitors
+```
+
+### `POST /competitors`
+
+Aggiunge un competitor. Obbligatorio `name`; facoltativi `sector`, `website` (http o https) e `note`. Risponde `201` con il competitor creato, `409` se esiste già un competitor con lo stesso nome (senza distinguere maiuscole e minuscole).
+
+```sh
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Vela","sector":"Software gestionale","website":"https://vela.example"}' \
+  $API/competitors
 ```
 
 ### `GET /sources`
@@ -198,9 +208,9 @@ Sul piano Hobby di Vercel un cron può girare al massimo una volta al giorno, co
 |---|---|
 | `COMPETIA_API_TOKEN` | token delle rotte `/api/v1` |
 | `CRON_SECRET` | protegge `/api/cron/scrape` |
-| `COMPETIA_STORE` | `supabase` per usare il database; altrimenti dati di esempio in memoria |
+| `COMPETIA_STORE` | `supabase` per usare il database; altrimenti dati di esempio in memoria. Con `supabase` e una variabile del database mancante le rotte rispondono 503, senza ripiegare sui dati di esempio |
 | `SUPABASE_URL` | già presente per il modulo di accesso |
-| `SUPABASE_SERVICE_ROLE_KEY` | chiave di servizio, solo lato server, mai nel browser |
+| `SUPABASE_SERVICE_ROLE_KEY` | chiave segreta del progetto Supabase (`sb_secret_…` o la vecchia `service_role`), solo lato server, mai nel browser |
 | `COMPETIA_ORGANIZATION_ID` | l'organizzazione a cui appartengono i dati letti e scritti dall'API |
 
 ## Prova locale
@@ -211,16 +221,19 @@ COMPETIA_API_TOKEN=prova npm run dev
 curl -H "Authorization: Bearer prova" localhost:3000/api/v1/sources
 ```
 
-## Cosa manca prima di usarla sul database vero
+## Stato del database
 
-1. **Applicare la migrazione** `supabase/migrations/20261010090000_sources_and_scraping.sql` (tabelle `organizations`, `competitors`, `sources`, `source_snapshots`, `signals`, `signal_status_changes`, con RLS attiva e nessuna policy: solo la chiave di servizio legge e scrive). Non è stata applicata: serve l'OK di Andrea.
-2. **Creare l'organizzazione** e i competitor (riga in `organizations`, poi `COMPETIA_ORGANIZATION_ID`).
-3. **Impostare su Vercel** `COMPETIA_API_TOKEN`, `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `COMPETIA_ORGANIZATION_ID` e `COMPETIA_STORE=supabase`, poi ripubblicare.
-4. **Collegare il workspace**: le pagine di `/app` leggono ancora `lib/demo-data.ts`. Vanno spostate su `getStore()`.
-5. **Login e permessi per organizzazione**: oggi c'è un solo token per un'organizzazione. Con Supabase Auth servono policy RLS per membro e token per organizzazione.
-6. Lo store Supabase (`lib/store/supabase.ts`) è scritto e compilato ma non ancora provato contro il database: va provato subito dopo la migrazione.
+- Il 10 ottobre 2026 sono state applicate al progetto Supabase `competia` le tabelle di `supabase/migrations/20261010090000_sources_and_scraping.sql` (`organizations`, `competitors`, `sources`, `source_snapshots`, `signals`, `signal_status_changes`). RLS è attiva senza policy: legge e scrive solo la chiave segreta, lato server.
+- C'è un'organizzazione, `Competia` (slug `competia`): il suo `id` va in `COMPETIA_ORGANIZATION_ID`.
+- `supabase/migrations/20261010110000_signals_fk_indexes.sql` (indici suggeriti dall'advisor di Supabase) è nel repo ma non ancora applicata.
+- Lo store Supabase è stato provato contro PostgREST 12 in locale, con la stessa migrazione: tutte le rotte, un controllo con prezzo cambiato e una pagina bloccata da robots.txt.
 
-Senza questi passi, in produzione l'API usa i dati di esempio in memoria: ciò che si aggiunge vive solo finché resta accesa quella istanza della funzione.
+## Cosa manca
+
+1. **Impostare su Vercel** `COMPETIA_API_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `COMPETIA_ORGANIZATION_ID` e `COMPETIA_STORE=supabase`, poi ripubblicare. Finché manca `COMPETIA_STORE=supabase`, l'API usa i dati di esempio in memoria.
+2. **Aggiungere competitor e fonti** con `POST /competitors` e `POST /sources`.
+3. **Collegare il workspace**: le pagine di `/app` leggono ancora `lib/demo-data.ts`. Vanno spostate su `getStore()`.
+4. **Login e permessi per organizzazione**: oggi c'è un solo token per un'organizzazione. Con Supabase Auth servono policy RLS per membro e token per organizzazione.
 
 ## Limiti noti
 

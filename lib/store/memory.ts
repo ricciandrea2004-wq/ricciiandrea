@@ -2,15 +2,16 @@
 // local work and previews, not for production, where every function instance has its own copy.
 import { randomUUID } from "node:crypto";
 import { competitors, signals, sources } from "../demo-data";
-import type { Signal, Source } from "../domain";
-import type { NewSignal, NewSource, Snapshot, SignalFilter, SourceCheck, SourcePatch, Store } from "./types";
+import type { Competitor, Signal, Source } from "../domain";
+import type { NewCompetitor, NewSignal, NewSource, Snapshot, SignalFilter, SourceCheck, SourcePatch, Store } from "./types";
 
-type State = { sources: Source[]; signals: Signal[]; snapshots: Snapshot[] };
+type State = { competitors: Competitor[]; sources: Source[]; signals: Signal[]; snapshots: Snapshot[] };
 
 const g = globalThis as typeof globalThis & { __competiaMemoryStore?: State };
 
 function state(): State {
   g.__competiaMemoryStore ??= {
+    competitors: structuredClone(competitors),
     sources: structuredClone(sources),
     signals: structuredClone(signals),
     snapshots: [],
@@ -24,11 +25,17 @@ export const memoryStore: Store = {
   kind: "demo",
 
   async listCompetitors() {
-    return structuredClone(competitors);
+    return structuredClone(state().competitors);
   },
 
   async getCompetitor(id) {
-    return structuredClone(competitors.find((c) => c.id === id) ?? null);
+    return structuredClone(state().competitors.find((c) => c.id === id) ?? null);
+  },
+
+  async addCompetitor(input: NewCompetitor) {
+    const competitor: Competitor = { id: shortId("cmp"), ...input };
+    state().competitors.push(competitor);
+    return structuredClone(competitor);
   },
 
   async listSources(filter = {}) {

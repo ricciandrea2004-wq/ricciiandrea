@@ -1,7 +1,7 @@
 // Helpers for the JSON API under /api/v1: one response shape and bearer-token checks.
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getStore, type Store } from "./store";
+import { getStore, StoreConfigError, type Store } from "./store";
 
 export type ApiErrorCode =
   | "unauthorized"
@@ -53,7 +53,13 @@ export async function readJson(request: Request): Promise<Record<string, unknown
 }
 
 export async function withStore(handler: (store: Store) => Promise<Response>) {
-  const store = getStore();
+  let store: Store;
+  try {
+    store = getStore();
+  } catch (err) {
+    if (err instanceof StoreConfigError) return fail(503, "not_configured", `Il database non è configurato. ${err.message}`);
+    throw err;
+  }
   try {
     return await handler(store);
   } catch (err) {

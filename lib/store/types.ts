@@ -13,6 +13,8 @@ export type Snapshot = {
   text: string;
 };
 
+export type NewCompetitor = Omit<Competitor, "id">;
+
 export type NewSource = {
   competitorId: string;
   url: string;
@@ -46,6 +48,7 @@ export interface Store {
   readonly kind: "demo" | "supabase";
   listCompetitors(): Promise<Competitor[]>;
   getCompetitor(id: string): Promise<Competitor | null>;
+  addCompetitor(input: NewCompetitor): Promise<Competitor>;
   listSources(filter?: { competitorId?: string; status?: SourceStatus }): Promise<Source[]>;
   getSource(id: string): Promise<Source | null>;
   findSourceByUrl(competitorId: string, url: string): Promise<Source | null>;

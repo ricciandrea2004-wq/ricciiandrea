@@ -2,7 +2,7 @@
 // scoped to one organization (COMPETIA_ORGANIZATION_ID) until the API has per-user tokens.
 // Needs the tables in supabase/migrations/20261010090000_sources_and_scraping.sql.
 import type { Competitor, Signal, Source } from "../domain";
-import type { NewSignal, NewSource, Snapshot, SignalFilter, SourceCheck, SourcePatch, Store } from "./types";
+import type { NewCompetitor, NewSignal, NewSource, Snapshot, SignalFilter, SourceCheck, SourcePatch, Store } from "./types";
 
 type Config = { url: string; key: string; organizationId: string };
 
@@ -84,7 +84,9 @@ export function createSupabaseStore(config: Config): Store {
       ...init,
       headers: {
         apikey: config.key,
-        Authorization: `Bearer ${config.key}`,
+        // A legacy service_role key is a JWT and also goes in Authorization; a new sb_secret_ key
+        // travels only in apikey.
+        ...(config.key.startsWith("eyJ") ? { Authorization: `Bearer ${config.key}` } : {}),
         "Content-Type": "application/json",
         Prefer: "return=representation",
         ...init.headers,
@@ -94,8 +96,9 @@ export function createSupabaseStore(config: Config): Store {
     if (!res.ok) {
       throw new SupabaseError(`Supabase ${res.status} on ${path.split("?")[0]}`);
     }
-    if (res.status === 204) return [];
-    return (await res.json()) as Row[];
+    // With "Prefer: return=minimal" PostgREST answers 204 to a PATCH and 201 with no body to a POST.
+    const body = await res.text();
+    return body ? (JSON.parse(body) as Row[]) : [];
   }
 
   const one = (rows: Row[]) => rows[0] ?? null;
@@ -111,6 +114,20 @@ export function createSupabaseStore(config: Config): Store {
       if (!isUuid(id)) return null;
       const row = one(await request(`/competitors?organization_id=eq.${org}&id=eq.${encodeURIComponent(id)}`));
       return row ? competitorFromRow(row) : null;
+    },
+
+    async addCompetitor(input: NewCompetitor) {
+      const rows = await request("/competitors", {
+        method: "POST",
+        body: JSON.stringify({
+          organization_id: config.organizationId,
+          name: input.name,
+          sector: input.sector,
+          website: input.website,
+          note: input.note,
+        }),
+      });
+      return competitorFromRow(rows[0]);
     },
 
     async listSources(filter = {}) {
