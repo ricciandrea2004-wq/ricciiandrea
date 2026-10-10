@@ -225,7 +225,7 @@ curl -H "Authorization: Bearer prova" localhost:3000/api/v1/sources
 
 - Il 10 ottobre 2026 sono state applicate al progetto Supabase `competia` le tabelle di `supabase/migrations/20261010090000_sources_and_scraping.sql` (`organizations`, `competitors`, `sources`, `source_snapshots`, `signals`, `signal_status_changes`). RLS è attiva senza policy: legge e scrive solo la chiave segreta, lato server.
 - C'è un'organizzazione, `Competia` (slug `competia`): il suo `id` va in `COMPETIA_ORGANIZATION_ID`.
-- `supabase/migrations/20261010110000_signals_fk_indexes.sql` (indici suggeriti dall'advisor di Supabase) è nel repo ma non ancora applicata.
+- Il 10 ottobre 2026 è stata applicata anche `supabase/migrations/20261010110000_signals_fk_indexes.sql` (indici sui collegamenti dei segnali, suggeriti dall'advisor di Supabase).
 - Lo store Supabase è stato provato contro PostgREST 12 in locale, con la stessa migrazione: tutte le rotte, un controllo con prezzo cambiato e una pagina bloccata da robots.txt.
 
 ## Cosa manca
