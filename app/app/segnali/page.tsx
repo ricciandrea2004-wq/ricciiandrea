@@ -5,7 +5,7 @@ import LottieAnimation from "@/components/motion/LottieAnimation";
 import { CategoryTag, StatusTag } from "@/components/SignalTags";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { competitors, getCompetitor, getSource, organization, signals } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import {
   categories,
   categoryLabel,
@@ -30,6 +30,7 @@ function href(current: Params, patch: Partial<Params>) {
 }
 
 export default async function SignalsPage({ searchParams }: { searchParams: Promise<Params> }) {
+  const { competitors, getCompetitor, getSource, organization, signals } = await getWorkspace();
   const params = await searchParams;
   const view = params.vista === "board" ? "board" : "tabella";
   const category = categories.includes(params.categoria as Category) ? (params.categoria as Category) : undefined;

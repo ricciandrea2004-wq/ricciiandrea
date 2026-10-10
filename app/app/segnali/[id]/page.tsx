@@ -7,19 +7,17 @@ import PriceDelta from "@/components/motion/PriceDelta";
 import CopyLinkButton from "@/components/workspace/CopyLinkButton";
 import DemoAction from "@/components/workspace/DemoAction";
 import Topbar from "@/components/workspace/Topbar";
-import { briefingsForSignal, getCompetitor, getSignal, getSource, organization, signals } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import { formatDate } from "@/lib/domain";
 
-export function generateStaticParams() {
-  return signals.map((s) => ({ id: s.id }));
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { getCompetitor, getSignal, getSource } = await getWorkspace();
   const { id } = await params;
   return { title: getSignal(id)?.title ?? "Segnale" };
 }
 
 export default async function SignalPage({ params }: { params: Promise<{ id: string }> }) {
+  const { briefingsForSignal, getCompetitor, getSignal, getSource, organization } = await getWorkspace();
   const { id } = await params;
   const signal = getSignal(id);
   if (!signal) notFound();

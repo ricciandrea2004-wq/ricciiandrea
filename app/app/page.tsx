@@ -5,12 +5,13 @@ import CountUp from "@/components/motion/CountUp";
 import Tag from "@/components/Tag";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { briefings, getCompetitor, getSignal, organization, signals, sources } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import { briefingStatusLabel, formatShortDate } from "@/lib/domain";
 
 export const metadata: Metadata = { title: "Panoramica" };
 
-export default function OverviewPage() {
+export default async function OverviewPage() {
+  const { briefings, competitors, getCompetitor, getSignal, organization, signals, sources } = await getWorkspace();
   const toVerify = signals.filter((s) => s.status === "to_verify");
   const verified = signals.filter((s) => s.status === "verified");
   const inBriefing = signals.filter((s) => s.status === "in_briefing");
@@ -32,6 +33,27 @@ export default function OverviewPage() {
       <Topbar crumbs={[{ label: organization.name }, { label: "Panoramica" }]} />
       <div className="ws-content">
         <PageHead icon="home" title="Panoramica" description="Cosa è cambiato e cosa resta da fare." />
+
+        {sources.length === 0 && (
+          <section className="card block">
+            <h2 className="block-title">Per iniziare</h2>
+            <ol className="small" style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 6 }}>
+              <li>
+                <Link href="/app/competitor/nuovo" className="link">
+                  Aggiungi un competitor
+                </Link>
+                {competitors.length > 0 && <span className="muted"> · fatto ({competitors.length})</span>}
+              </li>
+              <li>
+                <Link href="/app/fonti/nuova" className="link">
+                  Aggiungi le sue pagine pubbliche
+                </Link>{" "}
+                <span className="muted">(prezzi, promozioni, catalogo): le leggiamo subito e poi ogni mattina.</span>
+              </li>
+              <li>Quando una pagina cambia, trovi il segnale qui in &ldquo;Da verificare&rdquo;.</li>
+            </ol>
+          </section>
+        )}
 
         <div className="stat-row ds-stagger">
           {stats.map((s, i) => (
@@ -73,6 +95,11 @@ export default function OverviewPage() {
         <div className="grid-2 block">
           <section>
             <h2 className="block-title">Ultimo briefing</h2>
+            {!latestBriefing && (
+              <div className="empty">
+                <strong>Ancora nessun briefing</strong>
+              </div>
+            )}
             {latestBriefing && (
               <Link href={`/app/briefing/${latestBriefing.id}`} className="card">
                 <div className="row" style={{ justifyContent: "space-between" }}>
@@ -90,6 +117,11 @@ export default function OverviewPage() {
           </section>
           <section>
             <h2 className="block-title">Attività recente</h2>
+            {activity.length === 0 && (
+              <div className="empty">
+                <strong>Nessuna attività</strong>
+              </div>
+            )}
             <ol className="timeline">
               {activity.map((a, i) => {
                 const s = getSignal(a.signalId);

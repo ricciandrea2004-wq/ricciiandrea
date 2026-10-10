@@ -8,19 +8,17 @@ import CopyLinkButton from "@/components/workspace/CopyLinkButton";
 import DemoAction from "@/components/workspace/DemoAction";
 import PrintButton from "@/components/workspace/PrintButton";
 import Topbar from "@/components/workspace/Topbar";
-import { briefings, getBriefing, getCompetitor, getSignal, getSource, organization } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import { briefingStatusLabel, formatDate, type Signal } from "@/lib/domain";
 
-export function generateStaticParams() {
-  return briefings.map((b) => ({ id: b.id }));
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { getBriefing, getCompetitor, getSignal, getSource } = await getWorkspace();
   const { id } = await params;
   return { title: getBriefing(id)?.title ?? "Briefing" };
 }
 
 export default async function BriefingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { getBriefing, getCompetitor, getSignal, getSource, organization } = await getWorkspace();
   const { id } = await params;
   const briefing = getBriefing(id);
   if (!briefing) notFound();

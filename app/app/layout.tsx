@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import MotionProvider from "@/components/motion/MotionProvider";
 import WorkspaceShell from "@/components/workspace/WorkspaceShell";
 import type { PaletteEntry } from "@/components/workspace/CommandPalette";
-import { briefings, competitors, organization, signals, sources } from "@/lib/demo-data";
 import { categoryLabel, statusLabel } from "@/lib/domain";
 import { workspaceLinks } from "@/lib/nav";
+import { getWorkspace, type Workspace } from "@/lib/workspace/data";
 import { currentUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-function paletteEntries(): PaletteEntry[] {
+function paletteEntries({ competitors, sources, signals, briefings }: Workspace): PaletteEntry[] {
   const nameOf = (id: string) => competitors.find((c) => c.id === id)?.name ?? "";
   return [
     { group: "Pagine", label: "Panoramica", href: "/app", icon: "home" },
@@ -34,14 +34,13 @@ function paletteEntries(): PaletteEntry[] {
 }
 
 export default async function WorkspaceLayout({ children }: { children: React.ReactNode }) {
-  const toVerify = signals.filter((s) => s.status === "to_verify").length;
+  const ws = await getWorkspace();
+  const toVerify = ws.signals.filter((s) => s.status === "to_verify").length;
   const user = await currentUser();
   return (
     <MotionProvider>
-      <WorkspaceShell orgName={organization.name} userEmail={user?.email} toVerify={toVerify} entries={paletteEntries()}>
-        <div className="demo-banner">
-          Dati di esempio: il workspace non è ancora collegato al database.
-        </div>
+      <WorkspaceShell orgName={ws.organization.name} userEmail={user?.email} toVerify={toVerify} entries={paletteEntries(ws)}>
+        {ws.notice && <div className="demo-banner">{ws.notice}</div>}
         {children}
       </WorkspaceShell>
     </MotionProvider>

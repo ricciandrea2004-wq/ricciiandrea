@@ -94,6 +94,8 @@ export type AccessoApprovato = {
   /** Who invited: a team member, or omitted when Competia opens the pilot. */
   invitatoDa?: string;
   scadenzaGiorni?: number;
+  /** Supabase invite links expire with the email OTP (1 hour by default): then this wins over days. */
+  scadenzaOre?: number;
 };
 
 function accessoApprovato(d: AccessoApprovato, ctx: Ctx): Rendered {
@@ -104,25 +106,28 @@ function accessoApprovato(d: AccessoApprovato, ctx: Ctx): Rendered {
   const intro = d.invitatoDa
     ? `${d.invitatoDa} ti ha invitato su Competia, in ${where}.`
     : `Si è aperto un posto nel programma pilota: ${where} è pronto.`;
-  const days = d.scadenzaGiorni ?? 7;
+  const validity = d.scadenzaOre
+    ? `${d.scadenzaOre} ${d.scadenzaOre === 1 ? "ora" : "ore"}. Se scade, entra da competia.work/accedi con questo indirizzo e chiedi un codice via email`
+    : `${d.scadenzaGiorni ?? 7} giorni`;
+  const howTo = "Al primo accesso scegli una password: poi entri con email e password, oppure con un codice che ti mandiamo via email.";
   const reason = "Ricevi questa email perché qualcuno ti ha dato accesso a competia.work. Se non ti aspettavi l'invito, puoi ignorarla.";
   const html = layout({
     ctx,
     title: subject,
-    preheader: "Entra con questo indirizzo email: non serve una password.",
+    preheader: "Accetta l'invito e scegli la tua password.",
     reason,
     body: [
       hero(ctx, "verifica", "Accesso approvato"),
       h1(d.invitatoDa ? "Ti hanno invitato su Competia." : "Il tuo accesso è pronto."),
       p(intro),
-      p("Entri con questo indirizzo email: ti mandiamo un link ogni volta, senza password."),
+      p(howTo),
       button(d.url, "Accetta l'invito"),
-      p(`L'invito vale ${days} giorni.`, "secondary", 14),
+      p(`L'invito vale ${validity}.`, "secondary", 14),
       fallbackLink(d.url),
     ].join("\n"),
   });
   const text = textLayout(
-    [hello(), "", intro, "", "Entri con questo indirizzo email: ti mandiamo un link ogni volta, senza password.", "", `Accetta l'invito: ${d.url}`, "", `L'invito vale ${days} giorni.`],
+    [hello(), "", intro, "", howTo, "", `Accetta l'invito: ${d.url}`, "", `L'invito vale ${validity}.`],
     reason,
     ctx.site,
   );
@@ -144,8 +149,8 @@ const linkCopy = {
   accesso: {
     subject: "Il tuo link per entrare in Competia",
     title: "Entra in Competia.",
-    text: "Premi il bottone per entrare. Non serve una password.",
-    plain: "apri questo link per entrare in Competia. Non serve una password.",
+    text: "Premi il bottone per entrare, oppure scrivi il codice qui sotto nella pagina di accesso.",
+    plain: "apri questo link per entrare in Competia:",
     button: "Entra in Competia",
     reason:
       "Ricevi questa email perché qualcuno ha chiesto di entrare su competia.work con questo indirizzo. Se non sei stato tu, ignorala: senza il link nessuno può entrare.",

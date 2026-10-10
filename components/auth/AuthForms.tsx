@@ -40,13 +40,13 @@ function EmailField({ defaultEmail = "", autoFocus = false }: { defaultEmail?: s
   );
 }
 
-/** Sign-in link by email: the default way in, also used on the invitation page. */
-export function MagicLinkForm({ submitLabel = "Continua con l'email", defaultEmail = "", next = "/app" }: { submitLabel?: string; defaultEmail?: string; next?: string }) {
+/** Link and 6-digit code by email: for who has no password yet, also used on the invitation page. */
+export function MagicLinkForm({ submitLabel = "Mandami un codice", defaultEmail = "", next = "/app" }: { submitLabel?: string; defaultEmail?: string; next?: string }) {
   const [state, action, pending] = useActionState(sendLoginLink, {});
   return (
     <form className="stack" action={action}>
       <input type="hidden" name="next" value={next} />
-      <EmailField defaultEmail={defaultEmail} />
+      <EmailField defaultEmail={state.email ?? defaultEmail} />
       <button type="submit" className="btn btn-primary btn-lg" disabled={pending}>
         {pending ? "Invio in corso…" : submitLabel}
       </button>
@@ -56,11 +56,12 @@ export function MagicLinkForm({ submitLabel = "Continua con l'email", defaultEma
 }
 
 function PasswordForm({ next }: { next: string }) {
+  // Email first, then password: the browser's password manager fills both.
   const [state, action, pending] = useActionState(signInWithPassword, {});
   return (
     <form className="stack" action={action}>
       <input type="hidden" name="next" value={next} />
-      <EmailField autoFocus />
+      <EmailField defaultEmail={state.email} autoFocus={!state.email} />
       <div className="field">
         <div className="field__row">
           <label className="label" htmlFor="auth-password">
@@ -80,14 +81,14 @@ function PasswordForm({ next }: { next: string }) {
   );
 }
 
-/** The login page: link via email first, password for those who have set one. */
+/** The login page: email and password first, a code by email for who has no password yet. */
 export function LoginForm({ next }: { next: string }) {
-  const [mode, setMode] = useState<"link" | "password">("link");
+  const [mode, setMode] = useState<"link" | "password">("password");
   return (
     <div className="stack">
       {mode === "link" ? <MagicLinkForm next={next} /> : <PasswordForm next={next} />}
       <button type="button" className="link-btn small" onClick={() => setMode(mode === "link" ? "password" : "link")}>
-        {mode === "link" ? "Entra con la password" : "Ricevi invece un link via email"}
+        {mode === "link" ? "Entra con email e password" : "Non hai una password? Ricevi un codice via email"}
       </button>
     </div>
   );
@@ -129,7 +130,7 @@ export function ResetRequestForm() {
   const [state, action, pending] = useActionState(requestPasswordReset, {});
   return (
     <form className="stack" action={action}>
-      <EmailField autoFocus />
+      <EmailField defaultEmail={state.email} autoFocus />
       <button type="submit" className="btn btn-primary btn-lg" disabled={pending}>
         {pending ? "Invio in corso…" : "Mandami il link"}
       </button>
@@ -144,7 +145,7 @@ export function NewPasswordForm() {
     return (
       <div className="stack">
         <p className="form-status" role="status" data-state="done">
-          Password salvata. Da ora puoi entrare anche con email e password.
+          Password salvata. Da ora entri con email e password.
         </p>
         <Link href="/app" className="btn btn-primary btn-lg">
           Vai al workspace
@@ -163,21 +164,22 @@ export function NewPasswordForm() {
           name="password"
           type="password"
           autoComplete="new-password"
-          minLength={8}
+          minLength={10}
+          maxLength={72}
           required
           autoFocus
           aria-describedby="new-password-hint"
           className="input input-lg"
         />
         <span className="hint" id="new-password-hint">
-          Almeno 8 caratteri.
+          Almeno 10 caratteri, con lettere e numeri.
         </span>
       </div>
       <div className="field">
         <label className="label" htmlFor="new-password-confirm">
           Ripeti la password
         </label>
-        <input id="new-password-confirm" name="confirm" type="password" autoComplete="new-password" minLength={8} required className="input input-lg" />
+        <input id="new-password-confirm" name="confirm" type="password" autoComplete="new-password" minLength={10} maxLength={72} required className="input input-lg" />
       </div>
       <button type="submit" className="btn btn-primary btn-lg" disabled={pending}>
         {pending ? "Salvataggio…" : "Salva la password"}

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { sessionCookieOptions } from "@/lib/auth/session";
 import { supabaseAuthConfig } from "./config";
 
 /** Supabase client bound to the request cookies. Null when SUPABASE_URL or the key is missing. */
@@ -9,6 +10,7 @@ export async function createSupabaseServer() {
   const config = supabaseAuthConfig();
   if (!config) return null;
   return createServerClient(config.url, config.key, {
+    cookieOptions: sessionCookieOptions,
     cookies: {
       getAll: () => store.getAll(),
       setAll(list) {
@@ -22,12 +24,18 @@ export async function createSupabaseServer() {
   });
 }
 
-/** The signed-in person's id and email, verified from the session token, or null. */
-export async function currentUser(): Promise<{ id: string; email: string } | null> {
+export type CurrentUser = { id: string; email: string; admin: boolean };
+
+/**
+ * The signed-in person, verified from the session token, or null. `admin` comes from
+ * app_metadata.role = "admin", which only the service role can set (people can't edit it).
+ */
+export async function currentUser(): Promise<CurrentUser | null> {
   const supabase = await createSupabaseServer();
   if (!supabase) return null;
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (!claims?.sub) return null;
-  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" };
+  const appMeta = (claims.app_metadata ?? {}) as { role?: unknown };
+  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "", admin: appMeta.role === "admin" };
 }

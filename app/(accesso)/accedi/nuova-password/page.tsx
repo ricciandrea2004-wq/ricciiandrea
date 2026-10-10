@@ -7,16 +7,18 @@ export const metadata: Metadata = { title: "Nuova password", robots: { index: fa
 export const dynamic = "force-dynamic";
 
 // Reached from the reset email (the link signs the person in first) or from the profile.
-export default async function NewPasswordPage() {
+export default async function NewPasswordPage({ searchParams }: { searchParams: Promise<{ benvenuto?: string }> }) {
+  const { benvenuto } = await searchParams;
   const user = await currentUser();
   return (
     <div className="auth-card ds-dialog">
       <div>
-        <h1>Scegli una nuova password</h1>
+        <h1>{benvenuto ? "Benvenuto in Competia" : "Scegli una nuova password"}</h1>
         <p className="muted small" style={{ marginTop: 6 }}>
           {user ? (
             <>
-              Per <strong>{user.email}</strong>. Potrai entrare con email e password oppure, come sempre, con il link via email.
+              {benvenuto ? "Scegli la password con cui entrerai" : "Nuova password"} per <strong>{user.email}</strong>. Se la
+              dimentichi, puoi sempre entrare con un codice via email.
             </>
           ) : (
             "Per cambiare la password serve prima il link che ti mandiamo via email."

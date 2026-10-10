@@ -1,16 +1,35 @@
 import type { Metadata } from "next";
 import Tag from "@/components/Tag";
+import { InviteForm } from "@/components/workspace/DataForms";
 import SettingsForm from "@/components/workspace/SettingsForm";
-import { members } from "@/lib/demo-data";
+import { currentUser } from "@/lib/supabase/server";
+import { getWorkspace } from "@/lib/workspace/data";
+import { listMembers } from "@/lib/workspace/members";
 import { roleLabel } from "@/lib/domain";
 
 export const metadata: Metadata = { title: "Membri" };
 
-export default function MembersPage() {
+export default async function MembersPage() {
+  const ws = await getWorkspace();
+  const user = await currentUser();
+  const real = ws.live ? await listMembers() : null;
+  const members = real ?? ws.members;
   return (
     <div className="stack ds-page" style={{ gap: 40 }}>
       <section>
         <h2 className="block-title">Invita una persona</h2>
+        {real ? (
+          user?.admin ? (
+            <>
+              <p className="small muted" style={{ marginBottom: 16 }}>
+                Riceve un&apos;email con il link per entrare e scegliere la password. Il link vale 1 ora.
+              </p>
+              <InviteForm />
+            </>
+          ) : (
+            <p className="small muted">Solo chi amministra lo spazio può invitare. Chiedilo a un amministratore.</p>
+          )
+        ) : (
         <SettingsForm submitLabel="Invia invito">
           <div className="form-grid">
             <div className="field">
@@ -30,6 +49,7 @@ export default function MembersPage() {
             </div>
           </div>
         </SettingsForm>
+        )}
       </section>
       <section>
         <h2 className="block-title">Membri</h2>

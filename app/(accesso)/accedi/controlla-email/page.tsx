@@ -16,7 +16,7 @@ export default async function CheckEmailPage({ searchParams }: { searchParams: P
         <p className="muted" style={{ marginTop: 8 }}>
           Se c&apos;è un account per{" "}
           {email ? <strong>{email}</strong> : "questo indirizzo"},{" "}
-          {recovery ? "ti abbiamo mandato il link per scegliere una nuova password." : "ti abbiamo mandato un link di accesso."} Il link vale 1
+          {recovery ? "ti abbiamo mandato il link per scegliere una nuova password." : "ti abbiamo mandato un codice e un link per entrare."} Il link vale 1
           ora e si usa una volta sola.
         </p>
       </div>

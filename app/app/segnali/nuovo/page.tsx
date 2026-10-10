@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import NewSignalForm from "@/components/workspace/NewSignalForm";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { competitors, organization, sources } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 
 export const metadata: Metadata = { title: "Nuovo segnale" };
 
-export default function NewSignalPage() {
+export default async function NewSignalPage() {
+  const { competitors, organization, sources } = await getWorkspace();
   return (
     <>
       <Topbar

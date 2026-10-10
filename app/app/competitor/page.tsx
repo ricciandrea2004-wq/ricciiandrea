@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import DemoAction from "@/components/workspace/DemoAction";
+import Icon from "@/components/Icon";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { competitors, organization, signalsForCompetitor, sources } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import { formatShortDate } from "@/lib/domain";
 
 export const metadata: Metadata = { title: "Competitor" };
 
-export default function CompetitorsPage() {
+export default async function CompetitorsPage() {
+  const { competitors, organization, signalsForCompetitor, sources } = await getWorkspace();
   return (
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Competitor" }]} />
@@ -17,8 +18,18 @@ export default function CompetitorsPage() {
           icon="target"
           title="Competitor"
           description="Le aziende che il team segue."
-          actions={<DemoAction label="Aggiungi competitor" icon="plus" variant="primary" />}
+          actions={
+            <Link href="/app/competitor/nuovo" className="btn btn-primary">
+              <Icon name="plus" />
+              Aggiungi competitor
+            </Link>
+          }
         />
+        {competitors.length === 0 && (
+          <div className="empty">
+            <strong>Nessun competitor</strong>Aggiungi la prima azienda da seguire, poi le sue pagine come fonti.
+          </div>
+        )}
         <div className="grid-3 ds-stagger">
           {competitors.map((c, i) => {
             const sig = signalsForCompetitor(c.id);

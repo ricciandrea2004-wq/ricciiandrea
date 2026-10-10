@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CategoryTag } from "@/components/SignalTags";
-import DemoAction from "@/components/workspace/DemoAction";
+import Icon from "@/components/Icon";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { getCompetitor, organization, signalsForSource, sources } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import { formatShortDate } from "@/lib/domain";
 
 export const metadata: Metadata = { title: "Fonti" };
 
-export default function SourcesPage() {
+export default async function SourcesPage() {
+  const { getCompetitor, organization, signalsForSource, sources } = await getWorkspace();
   const rows = [...sources].sort((a, b) => b.lastObservedAt.localeCompare(a.lastObservedAt));
   return (
     <>
@@ -19,8 +20,18 @@ export default function SourcesPage() {
           icon="source"
           title="Fonti"
           description="Le pagine pubbliche che il team osserva. Ogni segnale ne cita una."
-          actions={<DemoAction label="Nuova fonte" icon="plus" variant="primary" />}
+          actions={
+            <Link href="/app/fonti/nuova" className="btn btn-primary">
+              <Icon name="plus" />
+              Nuova fonte
+            </Link>
+          }
         />
+        {rows.length === 0 ? (
+          <div className="empty">
+            <strong>Nessuna fonte</strong>Aggiungi una pagina pubblica di un competitor: la controlliamo ogni mattina.
+          </div>
+        ) : (
         <div className="table-wrap ds-page">
           <table className="db-table">
             <thead>
@@ -53,6 +64,7 @@ export default function SourcesPage() {
           </table>
           <div className="db-foot">{rows.length} fonti</div>
         </div>
+        )}
       </div>
     </>
   );

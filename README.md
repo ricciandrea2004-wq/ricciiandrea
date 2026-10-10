@@ -148,15 +148,24 @@ Per accendere:
 
 ## Accesso
 
-Tutto passa dal server (server action e `/auth/confirm`): le chiavi Supabase non arrivano al browser e la sessione sta in cookie.
+Tutto passa dal server (server action e `/auth/confirm`): le chiavi Supabase non arrivano al browser e la sessione sta in cookie `httpOnly`.
 
 | Pagina | Cosa fa |
 |---|---|
-| `/accedi` | link via email (predefinito) oppure email e password |
-| `/accedi/controlla-email` | dopo l'invio; si può scrivere il codice a 6 cifre invece di aprire il link |
+| `/accedi` | email e password (predefinito) oppure codice via email |
+| `/accedi/controlla-email` | dopo l'invio; si scrive il codice a 6 cifre oppure si apre il link |
 | `/accedi/password-dimenticata` | manda il link per scegliere una nuova password |
-| `/accedi/nuova-password` | imposta la password (dal link di reset o da Impostazioni → Profilo) |
+| `/accedi/nuova-password` | imposta la password (primo accesso da invito, link di reset, Impostazioni → Profilo) |
 | `/auth/confirm` | dove arrivano i link delle email; poi porta a `next` (solo pagine `/app`) |
+
+Sicurezza:
+
+- Solo su invito: chi non ha un account riceve la stessa risposta di chi ce l'ha, e nessuna email (nessuna enumerazione degli account).
+- Limiti ai tentativi per email e per IP (`lib/auth/rate-limit.ts`): password 8 ogni 15 minuti per email, codice 6, link 4, reset 3. Il contatore sta in Postgres (`auth_rate_hit`, migrazione `20261010210000_auth_rate_limits.sql`); finché la migrazione non c'è, resta in memoria per istanza.
+- Password: almeno 10 caratteri, con lettere e numeri.
+- Sessione: dura al massimo 7 giorni dall'accesso e scade dopo 12 ore senza attività (`lib/auth/session.ts`, controllata in `middleware.ts`).
+- Header di sicurezza in `next.config.mjs` (HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`).
+- Chi amministra (può invitare persone) ha `app_metadata.role = "admin"`.
 
 I link delle email li costruisce `/api/email/auth-hook` e puntano al sito da cui è partita la richiesta (produzione o anteprima), se Supabase lo ha nella lista degli URL permessi; altrimenti al Site URL.
 
@@ -164,8 +173,21 @@ Per accenderlo in Supabase (progetto `competia`):
 
 1. Authentication → URL Configuration: Site URL `https://www.competia.work`; Redirect URLs `https://www.competia.work/**` e, per le anteprime, `https://competia-work-*-andrea-riccis-projects-6714dfee.vercel.app/**`.
 2. Authentication → Hooks → Send Email → HTTPS `https://www.competia.work/api/email/auth-hook`; il segreto generato va in `SEND_EMAIL_HOOK_SECRET` su Vercel (Production e Preview).
-3. Authentication → Sign In / Providers → Email: lasciare disattivate le iscrizioni libere ("Allow new users to sign up"): gli account si creano con Authentication → Users → Invite user.
-4. `EMAIL_SENDING` su Vercel: con `off` l'hook risponde 503 e chi prova a entrare vede "Non siamo riusciti a mandare l'email"; con `interno` arrivano solo agli indirizzi di `EMAIL_INTERNAL_TO`; con `on` a tutti.
+3. Authentication → Sign In / Providers → Email: disattivare "Allow new users to sign up"; Email OTP Expiration 3600 secondi; Minimum password length 10 con "Letters and digits".
+4. Applicare `supabase/migrations/20261010210000_auth_rate_limits.sql`.
+5. Invitare la prima persona (Authentication → Users → Invite user) e renderla amministratrice:
+   ```sql
+   update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}' where email = 'nome@azienda.it';
+   ```
+   Dopo, gli inviti si mandano da Impostazioni → Membri.
+6. `EMAIL_SENDING` su Vercel: con `off` l'hook risponde 503 e chi prova a entrare vede "Non siamo riusciti a mandare l'email"; con `interno` arrivano solo agli indirizzi di `EMAIL_INTERNAL_TO`; con `on` a tutti.
+7. `SUPABASE_SERVICE_ROLE_KEY` serve al workspace (dati veri, inviti, elenco membri): oggi c'è solo in Production; per provare l'anteprima con i dati veri va aggiunta anche in Preview.
+
+## Workspace
+
+Le pagine di `/app` leggono da `lib/workspace/data.ts`, che usa `getStore()`: con `COMPETIA_STORE=supabase` sono i dati veri dell'organizzazione `COMPETIA_ORGANIZATION_ID`, altrimenti (o se il database non risponde) i dati di esempio con un avviso in alto.
+
+Con i dati veri si può aggiungere un competitor (`/app/competitor/nuovo`), aggiungere una fonte (`/app/fonti/nuova`, che legge subito la pagina una volta), lanciare "Controlla ora" su una fonte e invitare persone. Verificare o scartare un segnale e scrivere briefing restano sui dati di esempio finché lo store non li supporta.
 
 ## Scorciatoie nel workspace
 
@@ -174,6 +196,5 @@ Per accenderlo in Supabase (progetto `competia`):
 
 ## Prossimi passi
 
-1. Supabase Auth con link via email, sessione nel middleware e protezione di `/app`.
-2. Schema del database (organizzazioni, membri, competitor, fonti, segnali, briefing) con RLS, al posto di `lib/demo-data.ts`.
-3. Unire la landing in questo progetto e pubblicare.
+1. Schema del database (organizzazioni, membri, competitor, fonti, segnali, briefing) con RLS, al posto di `lib/demo-data.ts`.
+2. Unire la landing in questo progetto e pubblicare.

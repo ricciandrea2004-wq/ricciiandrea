@@ -5,19 +5,17 @@ import Icon from "@/components/Icon";
 import { CategoryTag, StatusTag } from "@/components/SignalTags";
 import CopyLinkButton from "@/components/workspace/CopyLinkButton";
 import Topbar from "@/components/workspace/Topbar";
-import { competitors, getCompetitor, organization, signalsForCompetitor, sources } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import { formatDate, formatShortDate } from "@/lib/domain";
 
-export function generateStaticParams() {
-  return competitors.map((c) => ({ id: c.id }));
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { getCompetitor } = await getWorkspace();
   const { id } = await params;
   return { title: getCompetitor(id)?.name ?? "Competitor" };
 }
 
 export default async function CompetitorPage({ params }: { params: Promise<{ id: string }> }) {
+  const { getCompetitor, organization, signalsForCompetitor, sources } = await getWorkspace();
   const { id } = await params;
   const competitor = getCompetitor(id);
   if (!competitor) notFound();
@@ -43,15 +41,24 @@ export default async function CompetitorPage({ params }: { params: Promise<{ id:
             Sito
           </dt>
           <dd>
-            <a href={competitor.website} target="_blank" rel="noreferrer" className="link">
-              {competitor.website.replace("https://", "")}
-            </a>
+            {competitor.website ? (
+              <a href={competitor.website} target="_blank" rel="noreferrer" className="link">
+                {competitor.website.replace("https://", "")}
+              </a>
+            ) : (
+              <span className="muted">—</span>
+            )}
           </dd>
         </dl>
-        <p>{competitor.note}</p>
+        {competitor.note && <p>{competitor.note}</p>}
 
         <section className="block">
           <h2 className="block-title">Linea del tempo</h2>
+          {timeline.length === 0 && (
+            <div className="empty">
+              <strong>Ancora nessun segnale</strong>Compaiono qui quando una delle sue fonti cambia.
+            </div>
+          )}
           <ol className="timeline">
             {timeline.map((s) => (
               <li key={s.id}>
@@ -71,7 +78,13 @@ export default async function CompetitorPage({ params }: { params: Promise<{ id:
         </section>
 
         <section className="block">
-          <h2 className="block-title">Fonti</h2>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <h2 className="block-title">Fonti</h2>
+            <Link href={`/app/fonti/nuova?competitor=${competitor.id}`} className="btn btn-secondary">
+              <Icon name="plus" />
+              Aggiungi fonte
+            </Link>
+          </div>
           <ul className="list">
             {own.map((s) => (
               <li key={s.id}>

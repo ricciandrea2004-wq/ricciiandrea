@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   const result =
     d.email_action_type === "invite"
-      ? await sendEmail({ kind: "accesso-approvato", to: email, data: { url }, idempotencyKey: key })
+      ? await sendEmail({ kind: "accesso-approvato", to: email, data: { url, scadenzaOre: 1 }, idempotencyKey: key })
       : await sendEmail({
           kind: "link-accesso",
           to: email,
