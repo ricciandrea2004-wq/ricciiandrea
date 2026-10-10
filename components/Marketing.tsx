@@ -38,7 +38,10 @@ export function Feature({
   children: React.ReactNode;
 }) {
   return (
-    <div className="feature reveal">
+    <div
+      className={`feature reveal ${color ? "feature--cat" : ""}`}
+      style={color ? ({ "--cat": `var(--tag-${color})` } as React.CSSProperties) : undefined}
+    >
       <span
         className="feature__icon"
         style={color ? { color: `var(--tag-${color})`, background: `var(--tag-${color}-bg)` } : undefined}
@@ -64,14 +67,14 @@ export function CtaBand({ title = "Porta il prossimo briefing su segnali verific
   return (
     <section className="section">
       <div className="container">
-        <div className="cta-band reveal">
+        <div className="cta-band ink reveal">
           <h2>{title}</h2>
           {text && (
-            <p className="muted" style={{ marginTop: 12, maxWidth: 560 }}>
+            <p className="lead" style={{ marginTop: 16, maxWidth: 560 }}>
               {text}
             </p>
           )}
-          <div className="hero__actions" style={{ marginTop: 24 }}>
+          <div className="hero__actions" style={{ marginTop: 32 }}>
             <Link href="/richiedi-accesso" className="btn btn-primary btn-lg">
               Richiedi accesso
             </Link>

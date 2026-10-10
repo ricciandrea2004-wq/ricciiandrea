@@ -24,6 +24,13 @@ const kinds = [
   { icon: "calendar" as const, color: categoryColor.promotion, title: "Promozione", text: "Sconti, offerte e campagne con date di inizio e fine." },
 ];
 
+// Facts about how the product works, not usage numbers.
+const facts = [
+  { num: "3", label: <><strong>categorie di segnale:</strong> prezzo, assortimento, promozioni.</> },
+  { num: "4", label: <><strong>stati, una sola regola:</strong> nel briefing entra solo ciò che è verificato.</> },
+  { num: "1", label: <><strong>fonte dietro ogni segnale,</strong> sempre a un clic da chi legge.</> },
+];
+
 const audience = [
   "Team commerciale che prepara trattative e risposte ai competitor",
   "Pricing e category management",
@@ -40,11 +47,11 @@ export default function HomePage() {
               Intelligence commerciale B2B
             </p>
             <h1 className="display" style={{ "--i": 1, marginTop: 16 } as React.CSSProperties}>
-              Sai cosa cambia sul mercato, con la fonte in mano.
+              Sai cosa cambia sul mercato, <span className="hl">con la fonte in mano.</span>
             </h1>
             <p className="lead" style={{ "--i": 2, marginTop: 24 } as React.CSSProperties}>
-              Competia raccoglie i segnali su prezzi, assortimento e promozioni dei tuoi competitor e li collega alla
-              pagina da cui arrivano. Ogni segnale si verifica prima di entrare nel briefing.
+              <strong>Competia raccoglie i segnali su prezzi, assortimento e promozioni dei tuoi competitor</strong> e li
+              collega alla pagina da cui arrivano. Ogni segnale si verifica prima di entrare nel briefing.
             </p>
             <div className="hero__actions" style={{ "--i": 3 } as React.CSSProperties}>
               <Link href="/richiedi-accesso" className="btn btn-primary btn-lg">
@@ -54,12 +61,28 @@ export default function HomePage() {
                 Vedi come funziona
               </Link>
             </div>
+            <p className="hero__note" style={{ "--i": 4 } as React.CSSProperties}>
+              Accesso su invito, pochi team alla volta.
+            </p>
           </div>
           <SignalExample className="ds-pop" samples={heroSamples} />
         </div>
       </section>
 
-      <section className="section section--subtle">
+      <section className="facts" aria-label="Come funziona, in tre numeri">
+        <div className="container">
+          <ul className="facts__grid">
+            {facts.map((f) => (
+              <li key={f.num}>
+                <span className="facts__num">{f.num}</span>
+                <span className="facts__label">{f.label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="section ink">
         <div className="container">
           <SectionHead title="Le informazioni ci sono. Mancano il tempo e la prova." />
           <div className="grid-3">
@@ -120,7 +143,7 @@ export default function HomePage() {
       <section className="section section--subtle">
         <div className="container split">
           <h2 className="reveal">Pensato per chi decide su prezzi e posizionamento.</h2>
-          <ul className="checklist reveal">
+          <ul className="checklist checklist--lg reveal">
             {audience.map((a) => (
               <li key={a}>
                 <Icon name="checkCircle" />
@@ -133,9 +156,9 @@ export default function HomePage() {
 
       <section className="section" id="accesso" aria-labelledby="accesso-titolo">
         <div className="container">
-          <div className="cta-band reveal">
+          <div className="cta-band ink reveal">
             <h2 id="accesso-titolo">Porta il prossimo briefing su segnali verificati.</h2>
-            <p className="muted" style={{ marginTop: 12 }}>
+            <p className="lead" style={{ marginTop: 16 }}>
               Siamo in accesso su invito. Lascia l&apos;email di lavoro e ti scriviamo appena c&apos;è posto.
             </p>
             <AccessForm />
