@@ -7,13 +7,15 @@ Prima versione dell'API che legge le pagine dei competitor e trasforma i cambiam
 1. Una **fonte** è una pagina pubblica di un competitor: indirizzo, competitor, tipo (`price`, `promotion`, `assortment`, `news`), stato e ora dell'ultimo controllo. Si può indicare un selettore CSS (per esempio `#prezzi`) per guardare solo una parte della pagina.
 2. Il **controllo** scarica la pagina con `fetch`, dopo aver letto `robots.txt` del sito. Tiene solo il testo (niente script, stili, menu nascosti), ne calcola l'hash SHA-256 e lo confronta con la copia precedente.
 3. Se il testo è cambiato nasce un **segnale** con stato `to_verify`, le righe tolte in `before` e quelle nuove in `after`. Per le fonti di prezzo il titolo riporta il prezzo vecchio e quello nuovo, se li trova. Il primo controllo di una fonte salva solo la copia di partenza.
-4. Una volta al giorno **Vercel Cron** chiama `/api/cron/scrape`, che controlla fino a 10 fonti, partendo da quelle controllate meno di recente.
+4. Ogni fonte ha una **frequenza** (`checkIntervalHours`, predefinita 24 ore, da 1 a 720). Una volta al giorno **Vercel Cron** chiama `/api/cron/scrape`, che controlla fino a 100 fonti tra quelle da controllare: prima quelle mai lette, poi le più in ritardo. Una fonte conta come da controllare fino a un'ora prima della scadenza, così il cron delle 05:00 non la salta per pochi secondi. Con il cron giornaliero di Hobby la frequenza più breve che si ottiene davvero è un giorno.
+5. Dopo **3 errori di fila** (pagina che non risponde, robots.txt che la vieta, formato non letto) l'attesa raddoppia a ogni nuovo errore, fino a una settimana. Il primo controllo riuscito la riporta alla frequenza normale. `failureCount` dice quanti errori di fila ha la fonte.
+6. Ogni giro e ogni pagina letta restano nello **storico** (`scrape_runs` e `source_checks`), con l'esito e il messaggio d'errore. Si leggono con `GET /runs`, `GET /runs/{id}` e nella scheda della fonte.
 
 Regole del controllo:
 
 - Agente `CompetiaBot/0.1 (+https://www.competia.work/contatti)`. In `robots.txt` vale il gruppo `competiabot`, altrimenti `*`. Se `robots.txt` non risponde (errore 5xx o rete) la pagina non si legge; se manca (4xx) si legge.
 - Almeno 5 secondi tra due richieste allo stesso sito, o il `Crawl-delay` del sito se è più lungo (fino a 30 s).
-- Ogni giro si ferma da solo dopo circa 45 secondi; le fonti rimaste passano al giro successivo.
+- Un giro avviato a mano si ferma da solo dopo circa 45 secondi, quello del cron dopo circa 270; le fonti rimaste passano al giro successivo.
 - Solo indirizzi pubblici `http`/`https` sulle porte 80 e 443: niente localhost, reti private o credenziali nell'indirizzo. Il controllo si ripete a ogni reindirizzamento.
 - Pagine fino a 2 MB, 15 secondi di attesa al massimo. I PDF non sono ancora letti.
 - Un cambiamento solo nell'ordine delle righe non diventa un segnale.
@@ -101,6 +103,8 @@ curl -H "Authorization: Bearer $TOKEN" "$API/sources?competitorId=vela"
       "status": "active",
       "lastCheckedAt": "2026-10-02T08:30:00Z",
       "lastError": null,
+      "checkIntervalHours": 24,
+      "failureCount": 0,
       "selector": null
     }
   ],
@@ -110,7 +114,7 @@ curl -H "Authorization: Bearer $TOKEN" "$API/sources?competitorId=vela"
 
 ### `POST /sources`
 
-Aggiunge una fonte. Obbligatori `competitorId`, `url`, `category`; facoltativi `label`, `note`, `selector`.
+Aggiunge una fonte. Obbligatori `competitorId`, `url`, `category`; facoltativi `label`, `note`, `selector`, `checkIntervalHours` (ore intere da 1 a 720, predefinito 24).
 
 ```sh
 curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
@@ -122,11 +126,11 @@ Risponde `201` con la fonte creata (stato `active`, `lastCheckedAt: null`).
 
 ### `GET /sources/{id}`
 
-Una fonte, con l'ultima copia salvata (`latestSnapshot`: ora, URL finale, codice HTTP, hash, titolo e i primi 1000 caratteri del testo).
+Una fonte, con l'ultima copia salvata (`latestSnapshot`: ora, URL finale, codice HTTP, hash, titolo e i primi 1000 caratteri del testo), `nextCheckAt` (quando tocca di nuovo; `null` se in pausa) e `recentChecks`, gli ultimi 10 controlli con esito e messaggio.
 
 ### `PATCH /sources/{id}`
 
-Mette in pausa o riattiva una fonte (`status`: `active` o `paused`), oppure cambia `label`, `note`, `selector` (`null` per toglierlo).
+Mette in pausa o riattiva una fonte (`status`: `active` o `paused`), oppure cambia `label`, `note`, `selector` (`null` per toglierlo) o `checkIntervalHours`.
 
 ```sh
 curl -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
@@ -165,7 +169,7 @@ curl -H "Authorization: Bearer $TOKEN" "$API/signals?status=to_verify&since=2026
 
 ### `POST /scrape`
 
-Avvia subito un controllo. Corpo facoltativo: `sourceIds` (solo quelle fonti) e `limit` (1–25, predefinito 10).
+Avvia subito un controllo sulle fonti da controllare. Corpo facoltativo: `sourceIds` (solo quelle fonti, anche se in pausa o non ancora in scadenza) e `limit` (1–25, predefinito 10). Come tutta l'API, funziona solo con `COMPETIA_API_TOKEN` impostato.
 
 ```sh
 curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
@@ -176,10 +180,15 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
 {
   "ok": true,
   "data": {
+    "runId": "3f0c…",
+    "trigger": "manual",
     "startedAt": "2026-10-10T05:00:03.120Z",
+    "finishedAt": "2026-10-10T05:00:03.932Z",
     "durationMs": 812,
+    "due": 1,
     "checked": 1,
     "changed": 0,
+    "failed": 0,
     "results": [
       {
         "sourceId": "src-vela-prezzi",
@@ -194,13 +203,21 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
 }
 ```
 
-`outcome` per fonte: `baseline` (prima copia), `unchanged`, `changed` (con `signalId`), `blocked` (robots.txt), `error` (con il motivo in `message`), `skipped` (tempo del giro finito).
+`outcome` per fonte: `baseline` (prima copia), `unchanged`, `changed` (con `signalId`), `blocked` (robots.txt), `error` (con il motivo in `message`), `skipped` (tempo del giro finito). `due` conta le fonti da controllare all'inizio del giro, `failed` gli esiti `blocked` ed `error`. `runId` è `null` se lo storico non è stato salvato: il giro vale comunque.
+
+### `GET /runs`
+
+Gli ultimi giri, dal più recente (`limit` da 1 a 100, predefinito 20): `trigger` (`cron` o `manual`), inizio, fine, durata, `due`, `checked`, `changed`, `failed`.
+
+### `GET /runs/{id}`
+
+Un giro con `checks`: ogni pagina letta, con `sourceId`, ora, `outcome`, `message`, `signalId` e durata. È il registro degli errori.
 
 ### `GET /api/cron/scrape` (fuori da v1)
 
 Solo per Vercel Cron, ogni giorno alle 05:00 UTC (`vercel.json`). Vercel manda da solo `Authorization: Bearer $CRON_SECRET` quando la variabile `CRON_SECRET` è impostata; senza, la rotta risponde 503 e non fa niente.
 
-Sul piano Hobby di Vercel un cron può girare al massimo una volta al giorno, con un orario preciso solo all'ora (05:00–05:59), e una funzione dura al massimo 300 secondi. Le rotte di controllo hanno `maxDuration = 60` e si fermano da sole dopo 45 secondi.
+Sul piano Hobby di Vercel un cron può girare al massimo una volta al giorno, con un orario preciso solo all'ora (05:00–05:59), e una funzione dura al massimo 300 secondi. Il cron ha `maxDuration = 300`, legge fino a 100 fonti e si ferma da solo dopo circa 270 secondi; poi chiama `prune_scrape_history()`, che tiene le ultime 30 copie per fonte e 90 giorni di storico. `POST /scrape` ha `maxDuration = 60` e si ferma dopo 45 secondi.
 
 ## Variabili d'ambiente
 
@@ -216,7 +233,7 @@ Sul piano Hobby di Vercel un cron può girare al massimo una volta al giorno, co
 ## Prova locale
 
 ```sh
-npm run test:scraper   # robots.txt, ritardo, copia, confronto, segnale, PDF, selettore, indirizzi privati
+npm run test:scraper   # robots.txt, ritardo, copia, confronto, segnale, PDF, selettore, indirizzi privati, frequenza, storico
 COMPETIA_API_TOKEN=prova npm run dev
 curl -H "Authorization: Bearer prova" localhost:3000/api/v1/sources
 ```
@@ -227,11 +244,12 @@ curl -H "Authorization: Bearer prova" localhost:3000/api/v1/sources
 - C'è un'organizzazione, `Competia` (slug `competia`): il suo `id` va in `COMPETIA_ORGANIZATION_ID`.
 - Il 10 ottobre 2026 è stata applicata anche `supabase/migrations/20261010110000_signals_fk_indexes.sql` (indici sui collegamenti dei segnali, suggeriti dall'advisor di Supabase).
 - Lo store Supabase è stato provato contro PostgREST 12 in locale, con la stessa migrazione: tutte le rotte, un controllo con prezzo cambiato e una pagina bloccata da robots.txt.
+- **Da applicare:** `supabase/migrations/20261010210000_scrape_runs_and_frequency.sql` (frequenza ed errori di fila sulle fonti, tabelle `scrape_runs` e `source_checks`, funzione `prune_scrape_history`). Va applicata prima di pubblicare il codice che la usa: senza le colonne nuove i controlli sul database falliscono. Provata in locale con PostgREST 12.
 
 ## Cosa manca
 
-1. **Impostare su Vercel** `COMPETIA_API_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `COMPETIA_ORGANIZATION_ID` e `COMPETIA_STORE=supabase`, poi ripubblicare. Finché manca `COMPETIA_STORE=supabase`, l'API usa i dati di esempio in memoria.
-2. **Aggiungere competitor e fonti** con `POST /competitors` e `POST /sources`.
+1. **Su Vercel** sono impostate `SUPABASE_SERVICE_ROLE_KEY`, `COMPETIA_ORGANIZATION_ID` e `COMPETIA_STORE=supabase`. `COMPETIA_API_TOKEN` resta vuota per scelta: l'API è chiusa (503) e il database lo usa solo il cron.
+2. **Aggiungere competitor e fonti**: con l'API chiusa si caricano direttamente nel database, o dall'area di lavoro quando avrà il login.
 3. **Collegare il workspace**: le pagine di `/app` leggono ancora `lib/demo-data.ts`. Vanno spostate su `getStore()`.
 4. **Login e permessi per organizzazione**: oggi c'è un solo token per un'organizzazione. Con Supabase Auth servono policy RLS per membro e token per organizzazione.
 
@@ -240,4 +258,3 @@ curl -H "Authorization: Bearer prova" localhost:3000/api/v1/sources
 - Le pagine costruite solo con JavaScript risultano vuote (errore "nessun testo leggibile"). Per quelle servirà un browser headless o un servizio gestito: da valutare fonte per fonte.
 - I PDF (listini) non sono ancora letti.
 - Il controllo DNS anti-indirizzi privati avviene prima della richiesta; un dominio che cambia indirizzo nel mezzo (DNS rebinding) non è ancora coperto.
-- Si tengono le ultime 30 copie per fonte solo dopo aver chiamato `prune_source_snapshots()` (non ancora programmata).

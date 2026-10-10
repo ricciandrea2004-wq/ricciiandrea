@@ -22,16 +22,46 @@ export type NewSource = {
   label: string;
   note: string;
   selector: string | null;
+  checkIntervalHours: number;
 };
 
-export type SourcePatch = Partial<Pick<Source, "label" | "note" | "selector" | "status">>;
+export type SourcePatch = Partial<Pick<Source, "label" | "note" | "selector" | "status" | "checkIntervalHours">>;
 
 export type SourceCheck = {
   status: SourceStatus;
   lastCheckedAt: string;
   lastError: string | null;
+  failureCount: number;
   lastObservedAt?: string;
 };
+
+export type CheckOutcome = "baseline" | "unchanged" | "changed" | "blocked" | "error";
+
+// One page read inside a run, kept as history (and as the error log) in source_checks.
+export type SourceCheckLog = {
+  sourceId: string;
+  checkedAt: string;
+  outcome: CheckOutcome;
+  message: string | null;
+  signalId: string | null;
+  durationMs: number;
+};
+
+export type RunTrigger = "cron" | "manual";
+
+export type ScrapeRunRecord = {
+  trigger: RunTrigger;
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
+  // Sources due when the run started; the ones not reached wait for the next run.
+  due: number;
+  checked: number;
+  changed: number;
+  failed: number;
+};
+
+export type ScrapeRunSummary = ScrapeRunRecord & { id: string };
 
 export type SignalFilter = {
   status?: SignalStatus;
@@ -59,4 +89,10 @@ export interface Store {
   addSnapshot(snapshot: Omit<Snapshot, "id">): Promise<Snapshot>;
   listSignals(filter: SignalFilter): Promise<Signal[]>;
   addSignal(signal: NewSignal): Promise<Signal>;
+  recordRun(run: ScrapeRunRecord, checks: SourceCheckLog[]): Promise<string>;
+  listRuns(limit: number): Promise<ScrapeRunSummary[]>;
+  getRun(id: string): Promise<(ScrapeRunSummary & { checks: SourceCheckLog[] }) | null>;
+  listChecks(sourceId: string, limit: number): Promise<SourceCheckLog[]>;
+  // Drops old snapshots and check history. Safe to skip: it only bounds storage.
+  pruneHistory(): Promise<void>;
 }

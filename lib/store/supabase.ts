@@ -1,8 +1,19 @@
 // Supabase store over PostgREST with the service role key, server side only. Every query is
 // scoped to one organization (COMPETIA_ORGANIZATION_ID) until the API has per-user tokens.
-// Needs the tables in supabase/migrations/20261010090000_sources_and_scraping.sql.
+// Needs the tables in supabase/migrations/ up to 20261010210000_scrape_runs_and_frequency.sql.
 import type { Competitor, Signal, Source } from "../domain";
-import type { NewCompetitor, NewSignal, NewSource, Snapshot, SignalFilter, SourceCheck, SourcePatch, Store } from "./types";
+import type {
+  NewCompetitor,
+  NewSignal,
+  NewSource,
+  ScrapeRunSummary,
+  Snapshot,
+  SignalFilter,
+  SourceCheck,
+  SourceCheckLog,
+  SourcePatch,
+  Store,
+} from "./types";
 
 type Config = { url: string; key: string; organizationId: string };
 
@@ -39,7 +50,34 @@ function sourceFromRow(r: Row): Source {
     status: r.status as Source["status"],
     lastCheckedAt: (r.last_checked_at as string | null) ?? null,
     lastError: (r.last_error as string | null) ?? null,
+    checkIntervalHours: Number(r.check_interval_hours ?? 24),
+    failureCount: Number(r.failure_count ?? 0),
     selector: (r.selector as string | null) ?? null,
+  };
+}
+
+function runFromRow(r: Row): ScrapeRunSummary {
+  return {
+    id: String(r.id),
+    trigger: r.trigger as ScrapeRunSummary["trigger"],
+    startedAt: String(r.started_at),
+    finishedAt: String(r.finished_at),
+    durationMs: Number(r.duration_ms),
+    due: Number(r.due),
+    checked: Number(r.checked),
+    changed: Number(r.changed),
+    failed: Number(r.failed),
+  };
+}
+
+function checkFromRow(r: Row): SourceCheckLog {
+  return {
+    sourceId: String(r.source_id),
+    checkedAt: String(r.checked_at),
+    outcome: r.outcome as SourceCheckLog["outcome"],
+    message: (r.message as string | null) ?? null,
+    signalId: (r.signal_id as string | null) ?? null,
+    durationMs: Number(r.duration_ms),
   };
 }
 
@@ -103,7 +141,7 @@ export function createSupabaseStore(config: Config): Store {
 
   const one = (rows: Row[]) => rows[0] ?? null;
 
-  return {
+  const store: Store = {
     kind: "supabase",
 
     async listCompetitors() {
@@ -165,6 +203,7 @@ export function createSupabaseStore(config: Config): Store {
           url: input.url,
           selector: input.selector,
           note: input.note,
+          check_interval_hours: input.checkIntervalHours,
         }),
       });
       return sourceFromRow(rows[0]);
@@ -177,6 +216,7 @@ export function createSupabaseStore(config: Config): Store {
       if (patch.note !== undefined) body.note = patch.note;
       if (patch.selector !== undefined) body.selector = patch.selector;
       if (patch.status !== undefined) body.status = patch.status;
+      if (patch.checkIntervalHours !== undefined) body.check_interval_hours = patch.checkIntervalHours;
       const row = one(
         await request(`/sources?organization_id=eq.${org}&id=eq.${encodeURIComponent(id)}`, {
           method: "PATCH",
@@ -191,6 +231,7 @@ export function createSupabaseStore(config: Config): Store {
         status: check.status,
         last_checked_at: check.lastCheckedAt,
         last_error: check.lastError,
+        failure_count: check.failureCount,
       };
       if (check.lastObservedAt) body.last_observed_at = check.lastObservedAt;
       await request(`/sources?organization_id=eq.${org}&id=eq.${encodeURIComponent(id)}`, {
@@ -264,5 +305,70 @@ export function createSupabaseStore(config: Config): Store {
       }
       return { ...signalFromRow(saved), history: signal.history };
     },
+
+    async recordRun(run, checks) {
+      const [saved] = await request("/scrape_runs?select=id", {
+        method: "POST",
+        body: JSON.stringify({
+          organization_id: config.organizationId,
+          trigger: run.trigger,
+          started_at: run.startedAt,
+          finished_at: run.finishedAt,
+          duration_ms: run.durationMs,
+          due: run.due,
+          checked: run.checked,
+          changed: run.changed,
+          failed: run.failed,
+        }),
+      });
+      if (checks.length > 0) {
+        await request("/source_checks", {
+          method: "POST",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify(
+            checks.map((c) => ({
+              run_id: saved.id,
+              source_id: c.sourceId,
+              checked_at: c.checkedAt,
+              outcome: c.outcome,
+              message: c.message,
+              signal_id: c.signalId,
+              duration_ms: c.durationMs,
+            })),
+          ),
+        });
+      }
+      return String(saved.id);
+    },
+
+    async listRuns(limit) {
+      return (await request(`/scrape_runs?organization_id=eq.${org}&order=started_at.desc&limit=${limit}`)).map(runFromRow);
+    },
+
+    async getRun(id) {
+      if (!isUuid(id)) return null;
+      const row = one(
+        await request(
+          `/scrape_runs?select=${encodeURIComponent("*,source_checks(*)")}&organization_id=eq.${org}&id=eq.${encodeURIComponent(id)}`,
+        ),
+      );
+      if (!row) return null;
+      const checks = ((row.source_checks as Row[] | undefined) ?? []).map(checkFromRow);
+      return { ...runFromRow(row), checks: checks.sort((a, b) => a.checkedAt.localeCompare(b.checkedAt)) };
+    },
+
+    async listChecks(sourceId, limit) {
+      if (!isUuid(sourceId)) return [];
+      // source_checks has no organization column: the source must belong to this organization.
+      if (!(await store.getSource(sourceId))) return [];
+      return (
+        await request(`/source_checks?source_id=eq.${encodeURIComponent(sourceId)}&order=checked_at.desc&limit=${limit}`)
+      ).map(checkFromRow);
+    },
+
+    async pruneHistory() {
+      await request("/rpc/prune_scrape_history", { method: "POST", headers: { Prefer: "return=minimal" }, body: "{}" });
+    },
   };
+  return store;
 }

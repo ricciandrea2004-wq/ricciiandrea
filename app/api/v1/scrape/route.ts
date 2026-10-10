@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 // Hobby allows up to 300 s; a run stops itself after about 45 s, so 60 s leaves margin.
 export const maxDuration = 60;
 
-// Runs the scraper now. Body (optional): { "sourceIds": ["..."], "limit": 10 }.
+// Runs the scraper now, on the due sources or on the ones named. Body (optional): { "sourceIds": ["..."], "limit": 10 }.
 export async function POST(request: Request) {
   const denied = checkBearer(request, "COMPETIA_API_TOKEN");
   if (denied) return denied;
@@ -31,5 +31,5 @@ export async function POST(request: Request) {
   }
   if (Object.keys(details).length > 0) return fail(400, "bad_request", "Dati non validi.", details);
 
-  return withStore(async (store) => ok(await runScrape(store, { sourceIds, limit }), store));
+  return withStore(async (store) => ok(await runScrape(store, { sourceIds, limit, trigger: "manual" }), store));
 }

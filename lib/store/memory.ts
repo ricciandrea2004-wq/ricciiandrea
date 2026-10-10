@@ -3,9 +3,28 @@
 import { randomUUID } from "node:crypto";
 import { competitors, signals, sources } from "../demo-data";
 import type { Competitor, Signal, Source } from "../domain";
-import type { NewCompetitor, NewSignal, NewSource, Snapshot, SignalFilter, SourceCheck, SourcePatch, Store } from "./types";
+import type {
+  NewCompetitor,
+  NewSignal,
+  NewSource,
+  ScrapeRunSummary,
+  Snapshot,
+  SignalFilter,
+  SourceCheck,
+  SourceCheckLog,
+  SourcePatch,
+  Store,
+} from "./types";
 
-type State = { competitors: Competitor[]; sources: Source[]; signals: Signal[]; snapshots: Snapshot[] };
+type State = {
+  competitors: Competitor[];
+  sources: Source[];
+  signals: Signal[];
+  snapshots: Snapshot[];
+  runs: (ScrapeRunSummary & { checks: SourceCheckLog[] })[];
+};
+
+const MAX_RUNS = 50;
 
 const g = globalThis as typeof globalThis & { __competiaMemoryStore?: State };
 
@@ -15,6 +34,7 @@ function state(): State {
     sources: structuredClone(sources),
     signals: structuredClone(signals),
     snapshots: [],
+    runs: [],
   };
   return g.__competiaMemoryStore;
 }
@@ -62,6 +82,7 @@ export const memoryStore: Store = {
       status: "active",
       lastCheckedAt: null,
       lastError: null,
+      failureCount: 0,
     };
     state().sources.push(source);
     return source;
@@ -113,4 +134,30 @@ export const memoryStore: Store = {
     state().signals.push(saved);
     return saved;
   },
+
+  async recordRun(run, checks) {
+    const st = state();
+    const saved = { id: shortId("run"), ...run, checks: structuredClone(checks) };
+    st.runs.unshift(saved);
+    st.runs.length = Math.min(st.runs.length, MAX_RUNS);
+    return saved.id;
+  },
+
+  async listRuns(limit) {
+    return state()
+      .runs.slice(0, limit)
+      .map(({ checks: _checks, ...run }) => run);
+  },
+
+  async getRun(id) {
+    return structuredClone(state().runs.find((r) => r.id === id) ?? null);
+  },
+
+  async listChecks(sourceId, limit) {
+    return state()
+      .runs.flatMap((r) => r.checks.filter((c) => c.sourceId === sourceId))
+      .slice(0, limit);
+  },
+
+  async pruneHistory() {},
 };
