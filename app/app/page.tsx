@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CategoryTag, StatusTag } from "@/components/SignalTags";
 import CountUp from "@/components/motion/CountUp";
 import Tag from "@/components/Tag";
+import AddCompetitor from "@/components/workspace/AddCompetitor";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
 import { briefings, getCompetitor, getSignal, organization, signals, sources } from "@/lib/demo-data";
@@ -31,7 +32,7 @@ export default function OverviewPage() {
     <>
       <Topbar crumbs={[{ label: organization.name }, { label: "Panoramica" }]} />
       <div className="ws-content">
-        <PageHead icon="home" title="Panoramica" description="Cosa è cambiato e cosa resta da fare." />
+        <PageHead icon="home" eyebrow={organization.name} title="Panoramica" description="Cosa è cambiato e cosa resta da fare." />
 
         <div className="stat-row ds-stagger">
           {stats.map((s, i) => (
@@ -42,6 +43,10 @@ export default function OverviewPage() {
               </div>
             </Link>
           ))}
+        </div>
+
+        <div className="block">
+          <AddCompetitor compact />
         </div>
 
         <section className="block">
