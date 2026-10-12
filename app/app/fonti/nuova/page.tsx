@@ -16,7 +16,7 @@ export default async function NewSourcePage({ searchParams }: { searchParams: Pr
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Fonti", href: "/app/fonti" }, { label: "Nuova fonte" }]} />
       <div className="ws-content ws-content--doc">
-        <PageHead
+        <PageHead eyebrow="Fonti"
           icon="plus"
           title="Nuova fonte"
           description="Una pagina pubblica da controllare ogni giorno. Quando cambia, nasce un segnale da verificare."

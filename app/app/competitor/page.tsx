@@ -14,7 +14,7 @@ export default async function CompetitorsPage() {
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Competitor" }]} />
       <div className="ws-content">
-        <PageHead
+        <PageHead eyebrow="Chi segui"
           icon="target"
           title="Competitor"
           description="Le aziende che il team segue."

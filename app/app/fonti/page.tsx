@@ -16,7 +16,7 @@ export default async function SourcesPage() {
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Fonti" }]} />
       <div className="ws-content">
-        <PageHead
+        <PageHead eyebrow="Dove guardiamo"
           icon="source"
           title="Fonti"
           description="Le pagine pubbliche che il team osserva. Ogni segnale ne cita una."

@@ -2473,3 +2473,341 @@ html[data-page-hidden] .tag__pulse {
     color: #000000;
   }
 }
+
+/* ---------- Workspace con il carattere della landing (v0.3) ----------
+   Stesse regole delle pagine pubbliche (README del design system, §10 e §11): barra laterale
+   su superficie inchiostro, occhielli e numeri nel colore d'accento, titoli a 800, schede con
+   raggio 14 px, una sola fascia blu per pagina (il riquadro "Da verificare"). */
+
+.ws-sidebar.ink {
+  border-right-color: transparent;
+}
+
+.ws-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.ws-brand:hover {
+  background: var(--bg-hover);
+}
+
+.ws-sidebar .ws-org {
+  margin: var(--space-3) 2px var(--space-2);
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+
+.ws-org__badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ws-org__text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.ws-org__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.ws-org__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.ws-sidebar .ws-nav__item {
+  position: relative;
+  min-height: 34px;
+}
+
+.ws-sidebar .ws-nav__item[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ws-sidebar .ws-nav__item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-text);
+}
+
+.ws-sidebar .ws-nav__item[aria-current="page"] svg {
+  color: var(--accent-text);
+}
+
+.ws-sidebar .ws-nav__count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Testata: griglia sottile sfumata come la hero, riquadro dell'icona, occhiello blu, titolo a 800. */
+.ws-content > .page-head {
+  position: relative;
+  isolation: isolate;
+  padding-top: var(--space-3);
+}
+
+.ws-content > .page-head::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(var(--space-6) * -1) calc(var(--space-8) * -1) calc(var(--space-4) * -1);
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 90% at 80% 0%, #000 15%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 90% at 80% 0%, #000 15%, transparent 75%);
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .ws-content > .page-head::before {
+    inset-inline: calc(var(--gutter) * -1);
+  }
+}
+
+.page-head__top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.page-head__tile {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.page-head__tile .page-head__icon {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  color: inherit;
+}
+
+.ws .eyebrow {
+  color: var(--accent-text);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.ws .page-head h1 {
+  font-size: clamp(30px, 3.2vw, 40px);
+  font-weight: var(--weight-display);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.ws .page-head > p {
+  font-size: 17px;
+}
+
+.ws .block-title {
+  font-size: 22px;
+  font-weight: var(--weight-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Riepiloghi: numeri a 800 come la fascia dei fatti; il primo ("Da verificare") è la fascia blu. */
+.ws .stat {
+  display: block;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  transition: box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.ws a.stat:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.ws .stat__value {
+  font-size: clamp(34px, 3.4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  margin-top: var(--space-2);
+}
+
+.ws .stat-row > .stat:first-child {
+  background: var(--accent-band);
+  border-color: transparent;
+  color: var(--on-accent);
+  box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+
+.ws .stat-row > .stat:first-child .muted {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* Elenchi dentro una scheda, come le schede della landing. */
+.ws .list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  overflow: hidden;
+}
+
+.ws .list > li:first-child {
+  border-top: 0;
+}
+
+.ws .list > li:last-child {
+  border-bottom: 0;
+}
+
+.ws .list__item {
+  padding: 12px 16px;
+}
+
+.ws .list__main strong {
+  font-weight: 600;
+}
+
+.ws .card {
+  border-radius: var(--radius-lg);
+}
+
+.ws .empty {
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+}
+
+.ws .btn-primary {
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+/* Primo accesso: scheda inchiostro con i passi numerati della landing. */
+.ws-start {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+  padding: clamp(24px, 3.5vw, 40px);
+  border-radius: var(--radius-lg);
+}
+
+.ws-start::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -12%;
+  top: -40%;
+  width: 520px;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 28%, transparent), transparent 62%);
+  pointer-events: none;
+}
+
+.ws-start h2 {
+  max-width: 22ch;
+  margin-top: var(--space-2);
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: var(--weight-heading);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.ws-start__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 var(--space-5);
+  margin-block: var(--space-5) var(--space-5);
+}
+
+.ws-start__steps li {
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: var(--space-3);
+  border-top: 2px solid var(--border-strong);
+}
+
+.ws-start__steps li:first-child {
+  border-top: 2px solid var(--accent-text);
+}
+
+.ws-start__steps li::before {
+  font-size: 26px;
+}
+
+.ws-start__steps h3 a:hover {
+  color: var(--accent-text);
+}
+
+@media (max-width: 900px) {
+  .ws-start__steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tabelle dentro una scheda, intestazioni come gli occhielli ma neutre. */
+.ws .table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.ws .db-table th {
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ws .db-table td {
+  padding: 10px 12px;
+}
+
+.ws .db-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ws .db-table .title-cell a {
+  font-weight: 600;
+}
+
+.ws .chip[aria-current="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}

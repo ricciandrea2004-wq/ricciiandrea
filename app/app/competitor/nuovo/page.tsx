@@ -18,7 +18,7 @@ export default async function NewCompetitorPage() {
         ]}
       />
       <div className="ws-content ws-content--doc">
-        <PageHead icon="plus" title="Nuovo competitor" description="Un'azienda da seguire. Dopo aggiungi le sue pagine pubbliche come fonti." />
+        <PageHead eyebrow="Competitor" icon="plus" title="Nuovo competitor" description="Un'azienda da seguire. Dopo aggiungi le sue pagine pubbliche come fonti." />
         <CompetitorForm />
       </div>
     </>

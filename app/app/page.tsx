@@ -32,26 +32,43 @@ export default async function OverviewPage() {
     <>
       <Topbar crumbs={[{ label: organization.name }, { label: "Panoramica" }]} />
       <div className="ws-content">
-        <PageHead icon="home" title="Panoramica" description="Cosa è cambiato e cosa resta da fare." />
+        <PageHead icon="home" eyebrow={organization.name} title="Panoramica" description="Cosa è cambiato e cosa resta da fare." />
 
         {sources.length === 0 && (
-          <section className="card block">
-            <h2 className="block-title">Per iniziare</h2>
-            <ol className="small" style={{ margin: 0, paddingLeft: 20, display: "grid", gap: 6 }}>
+          <section className="ws-start ink" aria-labelledby="per-iniziare">
+            <span className="eyebrow">Per iniziare</span>
+            <h2 id="per-iniziare">
+              Incolla il link di un competitor, <span className="hl">al resto pensiamo noi.</span>
+            </h2>
+            <ol className="steps ws-start__steps">
               <li>
-                <Link href="/app/competitor/nuovo" className="link">
-                  Aggiungi un competitor
-                </Link>
-                {competitors.length > 0 && <span className="muted"> · fatto ({competitors.length})</span>}
+                <div>
+                  <h3>
+                    <Link href="/app/competitor/nuovo">Aggiungi un competitor</Link>
+                  </h3>
+                  <p>Nome e sito dell&apos;azienda che vuoi seguire.{competitors.length > 0 && ` Fatto: ${competitors.length}.`}</p>
+                </div>
               </li>
               <li>
-                <Link href="/app/fonti/nuova" className="link">
-                  Aggiungi le sue pagine pubbliche
-                </Link>{" "}
-                <span className="muted">(prezzi, promozioni, catalogo): le leggiamo subito e poi ogni mattina.</span>
+                <div>
+                  <h3>
+                    <Link href="/app/fonti/nuova">Incolla le sue pagine</Link>
+                  </h3>
+                  <p>Prezzi, promozioni, catalogo: le leggiamo subito e poi ogni mattina.</p>
+                </div>
               </li>
-              <li>Quando una pagina cambia, trovi il segnale qui in &ldquo;Da verificare&rdquo;.</li>
+              <li>
+                <div>
+                  <h3>Verifica i segnali</h3>
+                  <p>Quando una pagina cambia, il segnale arriva qui in &ldquo;Da verificare&rdquo;.</p>
+                </div>
+              </li>
             </ol>
+            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+              <Link href={competitors.length > 0 ? "/app/fonti/nuova" : "/app/competitor/nuovo"} className="btn btn-primary btn-lg">
+                {competitors.length > 0 ? "Aggiungi una pagina" : "Aggiungi il primo competitor"}
+              </Link>
+            </div>
           </section>
         )}
 

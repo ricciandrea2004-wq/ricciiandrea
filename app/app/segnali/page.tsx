@@ -46,7 +46,7 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Segnali" }]} />
       <div className="ws-content">
-        <PageHead
+        <PageHead eyebrow="Cosa è cambiato"
           icon="signal"
           title="Segnali"
           description="Ogni cambiamento osservato sui competitor, con la sua fonte. Nel briefing entrano solo quelli verificati."

@@ -18,7 +18,7 @@ export default async function NewSignalPage() {
         ]}
       />
       <div className="ws-content ws-content--doc">
-        <PageHead icon="plus" title="Nuovo segnale" description="Registra un cambiamento. Resta da verificare finché un collega non lo conferma." />
+        <PageHead eyebrow="Segnali" icon="plus" title="Nuovo segnale" description="Registra un cambiamento. Resta da verificare finché un collega non lo conferma." />
         <NewSignalForm competitors={competitors} sources={sources} />
       </div>
     </>

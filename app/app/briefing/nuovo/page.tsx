@@ -12,7 +12,7 @@ export default async function NewBriefingPage() {
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Briefing", href: "/app/briefing" }, { label: "Nuovo briefing" }]} />
       <div className="ws-content">
-        <PageHead icon="doc" title="Nuovo briefing" description="Scegli i segnali verificati: la bozza si compone mentre selezioni." />
+        <PageHead eyebrow="Briefing" icon="doc" title="Nuovo briefing" description="Scegli i segnali verificati: la bozza si compone mentre selezioni." />
         <BriefingComposer signals={signals} competitors={competitors} sources={sources} />
       </div>
     </>

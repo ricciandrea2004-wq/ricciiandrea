@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Icon from "../Icon";
+import { LogoMark, Wordmark } from "../Logo";
 import CommandPalette, { type PaletteEntry } from "./CommandPalette";
 import { workspaceLinks } from "@/lib/nav";
 import { signOut } from "@/lib/auth/actions";
@@ -104,15 +105,14 @@ export default function WorkspaceShell({
   return (
     <ShellContext.Provider value={api}>
       <div className="ws" data-collapsed={collapsed} data-mobile-open={mobileOpen}>
-        <aside className="ws-sidebar" aria-label="Workspace" inert={collapsed && !mobileOpen ? true : undefined}>
+        {/* Superficie inchiostro come le fasce scure della landing: scura in entrambi i temi. */}
+        <aside className="ws-sidebar ink" aria-label="Workspace" inert={collapsed && !mobileOpen ? true : undefined}>
           <div className="ws-sidebar__inner">
             <div className="row" style={{ justifyContent: "space-between", gap: 4 }}>
-              <span className="ws-org">
-                <span className="ws-org__badge" aria-hidden="true">
-                  {orgName.charAt(0)}
-                </span>
-                {orgName}
-              </span>
+              <Link href="/app" className="ws-brand" aria-label="competia.work, panoramica">
+                <LogoMark size={22} />
+                <Wordmark />
+              </Link>
               <button
                 type="button"
                 className="icon-btn"
@@ -124,7 +124,17 @@ export default function WorkspaceShell({
               </button>
             </div>
 
-            <nav className="ws-nav" aria-label="Sezioni" style={{ marginTop: 8 }}>
+            <div className="ws-org">
+              <span className="ws-org__badge" aria-hidden="true">
+                {orgName.charAt(0)}
+              </span>
+              <span className="ws-org__text">
+                <span className="ws-org__label">Workspace</span>
+                <span className="ws-org__name">{orgName}</span>
+              </span>
+            </div>
+
+            <nav className="ws-nav" aria-label="Sezioni">
               <button type="button" className="ws-nav__item" onClick={() => setPaletteOpen(true)}>
                 <Icon name="search" />
                 Cerca

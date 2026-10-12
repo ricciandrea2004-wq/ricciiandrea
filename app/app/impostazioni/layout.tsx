@@ -9,7 +9,7 @@ export default async function SettingsLayout({ children }: { children: React.Rea
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Impostazioni" }]} />
       <div className="ws-content ws-content--doc">
-        <PageHead icon="settings" title="Impostazioni" />
+        <PageHead eyebrow="Workspace" icon="settings" title="Impostazioni" />
         <SettingsTabs />
         {children}
       </div>

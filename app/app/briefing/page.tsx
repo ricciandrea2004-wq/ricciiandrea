@@ -16,7 +16,7 @@ export default async function BriefingsPage() {
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Briefing" }]} />
       <div className="ws-content">
-        <PageHead
+        <PageHead eyebrow="Cosa condividere"
           icon="doc"
           title="Briefing"
           description="I documenti preparati per il team, con i segnali verificati del periodo."
