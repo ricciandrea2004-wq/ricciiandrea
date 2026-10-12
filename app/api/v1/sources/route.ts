@@ -1,6 +1,7 @@
 import { checkBearer, fail, ok, readJson, withStore } from "@/lib/api";
 import { categories, type Category, type SourceStatus } from "@/lib/domain";
 import { assertUrlShape, ScrapeError } from "@/lib/scraper/net";
+import { DEFAULT_INTERVAL_HOURS, isValidInterval, MAX_INTERVAL_HOURS, MIN_INTERVAL_HOURS } from "@/lib/scraper/schedule";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,10 @@ export async function POST(request: Request) {
   const selector = text(body.selector, 200) || null;
   if (!competitorId) details.competitorId = "Obbligatorio.";
   if (!categories.includes(category)) details.category = `Uno tra: ${categories.join(", ")}.`;
+  const checkIntervalHours = body.checkIntervalHours ?? DEFAULT_INTERVAL_HOURS;
+  if (!isValidInterval(checkIntervalHours)) {
+    details.checkIntervalHours = `Ore intere tra ${MIN_INTERVAL_HOURS} e ${MAX_INTERVAL_HOURS}.`;
+  }
   let url: URL | null = null;
   try {
     url = new URL(rawUrl);
@@ -49,7 +54,7 @@ export async function POST(request: Request) {
   } catch (err) {
     details.url = err instanceof ScrapeError ? err.message : "URL non valido.";
   }
-  if (Object.keys(details).length > 0 || !url) return fail(400, "bad_request", "Dati non validi.", details);
+  if (Object.keys(details).length > 0 || !url || !isValidInterval(checkIntervalHours)) return fail(400, "bad_request", "Dati non validi.", details);
 
   return withStore(async (store) => {
     if (!(await store.getCompetitor(competitorId))) {
@@ -65,6 +70,7 @@ export async function POST(request: Request) {
       label: text(body.label, 120) || url.hostname + url.pathname,
       note: text(body.note, 1000),
       selector,
+      checkIntervalHours,
     });
     return ok(source, store, 201);
   });

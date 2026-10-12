@@ -1,5 +1,6 @@
 // Self-test for the scraper against a local server: robots.txt, per-host delay, baseline,
-// unchanged, changed (with a signal), selector, PDF and the private-address block.
+// unchanged, changed (with a signal), selector, PDF, the private-address block, the per-source
+// schedule with failure backoff, and the run history.
 // Run with: npm run test:scraper
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -8,6 +9,8 @@ import { loadRobots, parseRobots } from "../../lib/scraper/robots";
 import { diffLines } from "../../lib/scraper/diff";
 import { assertPublicUrl, assertUrlShape } from "../../lib/scraper/net";
 import { runScrape } from "../../lib/scraper/run";
+import { dueSources, effectiveIntervalHours, isDue } from "../../lib/scraper/schedule";
+import type { Source } from "../../lib/domain";
 import { memoryStore } from "../../lib/store/memory";
 
 let price = "52 €";
@@ -43,6 +46,29 @@ async function main() {
   assert.throws(() => assertUrlShape(new URL("https://user:pw@example.com/")), /credenziali/);
   await assert.rejects(assertPublicUrl(new URL("http://10.0.0.1/")), /pubblico/);
 
+  // Schedule.
+  const H = 3_600_000;
+  const now = Date.parse("2026-10-11T05:00:10Z");
+  const src = (id: string, lastCheckedAt: string | null, extra: Partial<Source> = {}): Source => ({
+    id, competitorId: "c", label: id, category: "price", url: "https://example.com/", addedAt: "", lastObservedAt: "",
+    note: "", status: "active", lastCheckedAt, lastError: null, checkIntervalHours: 24, failureCount: 0, selector: null, ...extra,
+  });
+  assert.equal(isDue(src("a", "2026-10-10T05:00:30Z"), now), true, "daily source checked a bit later yesterday is due");
+  assert.equal(isDue(src("b", "2026-10-10T12:00:00Z"), now), false, "checked 17 hours ago is not due");
+  assert.equal(isDue(src("c", "2026-10-08T05:00:00Z", { checkIntervalHours: 72 }), now), true);
+  assert.equal(isDue(src("d", "2026-10-09T05:00:00Z", { checkIntervalHours: 72 }), now), false);
+  assert.equal(isDue(src("e", null, { status: "paused" }), now), false, "paused is never due");
+  assert.equal(effectiveIntervalHours({ checkIntervalHours: 24, failureCount: 2 }), 24);
+  assert.equal(effectiveIntervalHours({ checkIntervalHours: 24, failureCount: 3 }), 48, "third failure in a row doubles");
+  assert.equal(effectiveIntervalHours({ checkIntervalHours: 24, failureCount: 9 }), 168, "capped at a week");
+  assert.equal(effectiveIntervalHours({ checkIntervalHours: 720, failureCount: 9 }), 720, "never shorter than the interval");
+  assert.equal(isDue(src("f", new Date(now - 30 * H).toISOString(), { failureCount: 3 }), now), false, "backoff delays a failing page");
+  assert.deepEqual(
+    dueSources([src("old", "2026-10-01T00:00:00Z"), src("new", null), src("mid", "2026-10-09T00:00:00Z")], now).map((s) => s.id),
+    ["new", "old", "mid"],
+    "never-checked first, then most overdue",
+  );
+
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
   const base = `http://127.0.0.1:${port}`;
@@ -52,7 +78,7 @@ async function main() {
   assert.ok(down.unavailable && !down.isAllowed("/"), "unreachable robots.txt means do not crawl, with a reason");
 
   const add = (path: string, category: "price" | "assortment", selector: string | null = null) =>
-    memoryStore.addSource({ competitorId: "vela", url: `${base}${path}`, category, label: path, note: "", selector });
+    memoryStore.addSource({ competitorId: "vela", url: `${base}${path}`, category, label: path, note: "", selector, checkIntervalHours: 24 });
   const prezzi = await add("/prezzi", "price");
   const vietato = await add("/vietato", "assortment");
   const privato = await add("/privato", "assortment");
@@ -83,6 +109,17 @@ async function main() {
   assert.equal(signal.status, "to_verify");
   assert.equal((await memoryStore.getSource(prezzi.id))?.status, "active");
   assert.equal((await memoryStore.getSource(pdf.id))?.lastError, "I PDF non sono ancora supportati.");
+
+  // History: every read page is saved with its outcome, errors included; failures add up.
+  const saved = await memoryStore.getRun(run1.runId!);
+  assert.equal(saved?.checks.length, 5);
+  assert.equal(saved?.failed, 3, "pdf, empty selector and robots count as failures");
+  assert.equal(saved?.checks.find((c) => c.sourceId === pdf.id)?.message, "I PDF non sono ancora supportati.");
+  await runScrape(memoryStore, { sourceIds: [pdf.id], minHostDelayMs: 0, fetchOptions });
+  assert.equal((await memoryStore.getSource(pdf.id))?.failureCount, 2, "second failure in a row");
+  assert.equal((await memoryStore.getSource(prezzi.id))?.failureCount, 0);
+  assert.equal((await memoryStore.listChecks(prezzi.id, 10)).length, 3);
+  assert.equal(run3.trigger, "manual");
 
   const budget = await runScrape(memoryStore, { sourceIds: [prezzi.id, privato.id], minHostDelayMs: 5000, budgetMs: 1000, fetchOptions });
   assert.equal(budget.results[1].outcome, "skipped", "budget stops the run instead of waiting");
