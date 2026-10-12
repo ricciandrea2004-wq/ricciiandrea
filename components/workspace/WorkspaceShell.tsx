@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Icon from "../Icon";
+import { LogoMark, Wordmark } from "../Logo";
+import { ADD_COMPETITOR_ID } from "./AddCompetitor";
 import CommandPalette, { type PaletteEntry } from "./CommandPalette";
 import { workspaceLinks } from "@/lib/nav";
 import { dur, easeIn, easeOut } from "../motion/shared";
@@ -101,15 +103,13 @@ export default function WorkspaceShell({
   return (
     <ShellContext.Provider value={api}>
       <div className="ws" data-collapsed={collapsed} data-mobile-open={mobileOpen}>
-        <aside className="ws-sidebar" aria-label="Workspace" inert={collapsed && !mobileOpen ? true : undefined}>
+        <aside className="ws-sidebar ink" aria-label="Workspace" inert={collapsed && !mobileOpen ? true : undefined}>
           <div className="ws-sidebar__inner">
-            <div className="row" style={{ justifyContent: "space-between", gap: 4 }}>
-              <span className="ws-org">
-                <span className="ws-org__badge" aria-hidden="true">
-                  {orgName.charAt(0)}
-                </span>
-                {orgName}
-              </span>
+            <div className="ws-brand">
+              <Link href="/app" className="logo" aria-label="competia.work, panoramica">
+                <LogoMark />
+                <Wordmark />
+              </Link>
               <button
                 type="button"
                 className="icon-btn"
@@ -121,7 +121,22 @@ export default function WorkspaceShell({
               </button>
             </div>
 
-            <nav className="ws-nav" aria-label="Sezioni" style={{ marginTop: 8 }}>
+            <span className="ws-org">
+              <span className="ws-org__badge" aria-hidden="true">
+                {orgName.charAt(0)}
+              </span>
+              <span className="ws-org__name">
+                {orgName}
+                <small>Workspace</small>
+              </span>
+            </span>
+
+            <Link href={`/app/competitor#${ADD_COMPETITOR_ID}`} className="btn btn-primary ws-add">
+              <Icon name="plus" />
+              Aggiungi competitor
+            </Link>
+
+            <nav className="ws-nav" aria-label="Sezioni">
               <button type="button" className="ws-nav__item" onClick={() => setPaletteOpen(true)}>
                 <Icon name="search" />
                 Cerca
@@ -131,7 +146,7 @@ export default function WorkspaceShell({
                 <Icon name="home" />
                 Panoramica
               </Link>
-              <span className="ws-nav__sep" />
+              <span className="ws-nav__label">Monitoraggio</span>
               {workspaceLinks.map((l) => (
                 <Link key={l.href} href={l.href} className="ws-nav__item" aria-current={isActive(l.href) ? "page" : undefined}>
                   <Icon name={l.icon} />
@@ -143,7 +158,7 @@ export default function WorkspaceShell({
                   )}
                 </Link>
               ))}
-              <span className="ws-nav__sep" />
+              <span className="ws-nav__label">Account</span>
               <Link
                 href="/app/impostazioni/profilo"
                 className="ws-nav__item"
