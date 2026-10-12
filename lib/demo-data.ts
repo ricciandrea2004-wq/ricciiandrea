@@ -40,6 +40,8 @@ export const sources: Source[] = [
     status: "active",
     lastCheckedAt: "2026-10-02T08:30:00Z",
     lastError: null,
+    checkIntervalHours: 24,
+    failureCount: 0,
     selector: null,
   },
   {
@@ -54,6 +56,8 @@ export const sources: Source[] = [
     status: "active",
     lastCheckedAt: "2026-10-06T10:00:00Z",
     lastError: null,
+    checkIntervalHours: 24,
+    failureCount: 0,
     selector: null,
   },
   {
@@ -68,6 +72,8 @@ export const sources: Source[] = [
     status: "active",
     lastCheckedAt: "2026-10-05T07:45:00Z",
     lastError: null,
+    checkIntervalHours: 24,
+    failureCount: 0,
     selector: null,
   },
   {
@@ -82,6 +88,8 @@ export const sources: Source[] = [
     status: "active",
     lastCheckedAt: "2026-10-01T09:00:00Z",
     lastError: null,
+    checkIntervalHours: 24,
+    failureCount: 0,
     selector: null,
   },
   {
@@ -96,6 +104,8 @@ export const sources: Source[] = [
     status: "active",
     lastCheckedAt: "2026-10-07T16:10:00Z",
     lastError: null,
+    checkIntervalHours: 24,
+    failureCount: 0,
     selector: null,
   },
   {
@@ -110,6 +120,8 @@ export const sources: Source[] = [
     status: "active",
     lastCheckedAt: "2026-10-08T08:00:00Z",
     lastError: null,
+    checkIntervalHours: 24,
+    failureCount: 0,
     selector: null,
   },
 ];

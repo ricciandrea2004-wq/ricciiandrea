@@ -1,12 +1,14 @@
-// One scrape run: picks the sources checked least recently, fetches each page once, and turns a
-// change against the previous snapshot into a signal to verify. Small by design: a run has a source
-// limit and a time budget, and waits between two requests to the same host.
+// One scrape run: picks the sources that are due (lib/scraper/schedule.ts), fetches each page once,
+// and turns a change against the previous snapshot into a signal to verify. Small by design: a run
+// has a source limit and a time budget, and waits between two requests to the same host. Every run
+// and every page read is saved as history, so errors stay visible after the logs are gone.
 import type { Signal, Source } from "../domain";
-import type { Store } from "../store/types";
+import type { RunTrigger, SourceCheckLog, Store } from "../store/types";
 import { diffLines, excerpt, firstPrice, hasChanges } from "./diff";
 import { htmlToText, normalizeText, pageTitle, sha256 } from "./extract";
 import { fetchText, ScrapeError, type FetchOptions } from "./net";
 import { loadRobots, type Robots } from "./robots";
+import { dueSources } from "./schedule";
 
 export type ScrapeOutcome = "baseline" | "unchanged" | "changed" | "blocked" | "error" | "skipped";
 
@@ -22,6 +24,7 @@ export type ScrapeResult = {
 export type ScrapeRunOptions = {
   sourceIds?: string[];
   limit?: number;
+  trigger?: RunTrigger;
   budgetMs?: number;
   minHostDelayMs?: number;
   fetchOptions?: FetchOptions;
@@ -29,6 +32,9 @@ export type ScrapeRunOptions = {
 
 export const DEFAULT_LIMIT = 10;
 export const MAX_LIMIT = 25;
+// The daily cron has up to 300 s on Hobby: it reads more sources and stops itself at 270 s.
+export const CRON_LIMIT = 100;
+export const CRON_BUDGET_MS = 270_000;
 const DEFAULT_BUDGET_MS = 45_000;
 const DEFAULT_HOST_DELAY_MS = 5_000;
 const MAX_CRAWL_DELAY_MS = 30_000;
@@ -36,39 +42,57 @@ const AUTHOR = "Competia (automatico)";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function pickSources(store: Store, options: ScrapeRunOptions): Promise<Source[]> {
-  const limit = Math.min(Math.max(options.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+// Sources named in sourceIds are read even when paused or not due: that is a manual check.
+export async function pickSources(store: Store, options: ScrapeRunOptions): Promise<{ due: number; sources: Source[] }> {
+  const limit = Math.max(options.limit ?? DEFAULT_LIMIT, 1);
   if (options.sourceIds && options.sourceIds.length > 0) {
     const found = await Promise.all(options.sourceIds.slice(0, limit).map((id) => store.getSource(id)));
-    return found.filter((s): s is Source => s !== null);
+    const sources = found.filter((s): s is Source => s !== null);
+    return { due: sources.length, sources };
   }
-  const all = await store.listSources();
-  return all
-    .filter((s) => s.status !== "paused")
-    .sort((a, b) => (a.lastCheckedAt ?? "").localeCompare(b.lastCheckedAt ?? ""))
-    .slice(0, limit);
+  const due = dueSources(await store.listSources());
+  return { due: due.length, sources: due.slice(0, limit) };
 }
+
+const failed = (source: Source) => source.failureCount + 1;
 
 export async function runScrape(store: Store, options: ScrapeRunOptions = {}) {
   const startedAt = Date.now();
   const budget = options.budgetMs ?? DEFAULT_BUDGET_MS;
   const minDelay = options.minHostDelayMs ?? DEFAULT_HOST_DELAY_MS;
-  const sources = await pickSources(store, options);
+  const { due, sources } = await pickSources(store, options);
   const competitors = new Map((await store.listCompetitors()).map((c) => [c.id, c.name]));
   const robotsByOrigin = new Map<string, Robots>();
   const lastHitByHost = new Map<string, number>();
   const results: ScrapeResult[] = [];
+  const checks: SourceCheckLog[] = [];
 
   for (const source of sources) {
     const t0 = Date.now();
-    const done = (outcome: ScrapeOutcome, extra: Partial<ScrapeResult> = {}) =>
-      results.push({ sourceId: source.id, url: source.url, outcome, durationMs: Date.now() - t0, ...extra });
+    const done = (outcome: ScrapeOutcome, extra: Partial<ScrapeResult> = {}) => {
+      const durationMs = Date.now() - t0;
+      results.push({ sourceId: source.id, url: source.url, outcome, durationMs, ...extra });
+      if (outcome === "skipped") return;
+      checks.push({
+        sourceId: source.id,
+        checkedAt: new Date(t0).toISOString(),
+        outcome,
+        message: extra.message ?? null,
+        signalId: extra.signalId ?? null,
+        durationMs,
+      });
+    };
 
     let url: URL;
     try {
       url = new URL(source.url);
     } catch {
-      await store.recordCheck(source.id, { status: "error", lastCheckedAt: new Date().toISOString(), lastError: "URL non valido." });
+      await store.recordCheck(source.id, {
+        status: "error",
+        lastCheckedAt: new Date().toISOString(),
+        lastError: "URL non valido.",
+        failureCount: failed(source),
+      });
       done("error", { message: "URL non valido." });
       continue;
     }
@@ -77,7 +101,12 @@ export async function runScrape(store: Store, options: ScrapeRunOptions = {}) {
     // robots.txt already read and the page is off limits: no request, so no need to wait.
     if (robots && !robots.unavailable && !robots.isAllowed(url.pathname + url.search)) {
       const message = "robots.txt non permette di leggere questa pagina.";
-      await store.recordCheck(source.id, { status: "blocked", lastCheckedAt: new Date().toISOString(), lastError: message });
+      await store.recordCheck(source.id, {
+        status: "blocked",
+        lastCheckedAt: new Date().toISOString(),
+        lastError: message,
+        failureCount: failed(source),
+      });
       done("blocked", { message });
       continue;
     }
@@ -97,18 +126,34 @@ export async function runScrape(store: Store, options: ScrapeRunOptions = {}) {
       lastHitByHost.set(url.host, Date.now());
       const message = err instanceof ScrapeError ? err.message : "Errore imprevisto durante il controllo.";
       if (!(err instanceof ScrapeError)) console.error("scrape", source.id, err);
-      await store.recordCheck(source.id, { status: "error", lastCheckedAt: new Date().toISOString(), lastError: message });
+      await store.recordCheck(source.id, {
+        status: "error",
+        lastCheckedAt: new Date().toISOString(),
+        lastError: message,
+        failureCount: failed(source),
+      });
       done("error", { message });
     }
   }
 
-  return {
+  const summary = {
+    trigger: options.trigger ?? "manual",
     startedAt: new Date(startedAt).toISOString(),
+    finishedAt: new Date().toISOString(),
     durationMs: Date.now() - startedAt,
-    checked: results.filter((r) => r.outcome !== "skipped").length,
-    changed: results.filter((r) => r.outcome === "changed").length,
-    results,
-  };
+    due,
+    checked: checks.length,
+    changed: checks.filter((c) => c.outcome === "changed").length,
+    failed: checks.filter((c) => c.outcome === "error" || c.outcome === "blocked").length,
+  } as const;
+  // History must never cost the run its result: if saving it fails, the run still answers.
+  let runId: string | null = null;
+  try {
+    runId = await store.recordRun(summary, checks);
+  } catch (err) {
+    console.error("scrape history", err);
+  }
+  return { runId, ...summary, results };
 }
 
 async function checkSource(
@@ -128,7 +173,7 @@ async function checkSource(
   const now = new Date().toISOString();
   if (!robots.isAllowed(url.pathname + url.search)) {
     const message = "robots.txt non permette di leggere questa pagina.";
-    await store.recordCheck(source.id, { status: "blocked", lastCheckedAt: now, lastError: message });
+    await store.recordCheck(source.id, { status: "blocked", lastCheckedAt: now, lastError: message, failureCount: failed(source) });
     return { outcome: "blocked", message };
   }
 
@@ -158,7 +203,7 @@ async function checkSource(
   const hash = sha256(text);
   const previous = await store.latestSnapshot(source.id);
   if (previous && previous.contentHash === hash) {
-    await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null });
+    await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null, failureCount: 0 });
     return { outcome: "unchanged" };
   }
 
@@ -173,19 +218,19 @@ async function checkSource(
   });
 
   if (!previous) {
-    await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null });
+    await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null, failureCount: 0 });
     return { outcome: "baseline", message: "Prima copia salvata: i cambiamenti si vedono dal prossimo controllo." };
   }
 
   const diff = diffLines(previous.text, text);
   if (!hasChanges(diff)) {
     // Same lines in a different order: saved, but not a signal.
-    await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null });
+    await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null, failureCount: 0 });
     return { outcome: "unchanged", message: "Cambia solo l'ordine delle righe." };
   }
 
   const signal = await store.addSignal(buildSignal(source, competitorName, diff, now));
-  await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null, lastObservedAt: now });
+  await store.recordCheck(source.id, { status: "active", lastCheckedAt: now, lastError: null, failureCount: 0, lastObservedAt: now });
   return { outcome: "changed", signalId: signal.id };
 }
 

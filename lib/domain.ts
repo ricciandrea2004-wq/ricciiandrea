@@ -28,6 +28,10 @@ export type Source = {
   status: SourceStatus;
   lastCheckedAt: string | null;
   lastError: string | null;
+  // How often the scraper reads the page, in hours, and how many checks in a row have failed.
+  // Failures stretch the wait (see lib/scraper/schedule.ts) so a broken page is not hammered.
+  checkIntervalHours: number;
+  failureCount: number;
   // Optional CSS selector that narrows the watched part of the page (for example "main" or "#prezzi").
   selector: string | null;
 };
