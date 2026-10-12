@@ -1,6 +1,6 @@
 // Limits on sign-in attempts and access emails, per email and per IP.
 //
-// Counted in Postgres (public.auth_rate_hit, supabase/migrations/20261010210000_auth_rate_limits.sql)
+// Counted in Postgres (public.auth_rate_hit, supabase/migrations/20261012010000_auth_rate_limits.sql)
 // with the service role key, so every server instance shares the same count. Without the key or
 // the function (previews, before the migration) it falls back to a count in this server's memory:
 // weaker, because each Vercel instance counts on its own, but never unlimited.

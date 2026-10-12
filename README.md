@@ -161,7 +161,7 @@ Tutto passa dal server (server action e `/auth/confirm`): le chiavi Supabase non
 Sicurezza:
 
 - Solo su invito: chi non ha un account riceve la stessa risposta di chi ce l'ha, e nessuna email (nessuna enumerazione degli account).
-- Limiti ai tentativi per email e per IP (`lib/auth/rate-limit.ts`): password 8 ogni 15 minuti per email, codice 6, link 4, reset 3. Il contatore sta in Postgres (`auth_rate_hit`, migrazione `20261010210000_auth_rate_limits.sql`); finché la migrazione non c'è, resta in memoria per istanza.
+- Limiti ai tentativi per email e per IP (`lib/auth/rate-limit.ts`): password 8 ogni 15 minuti per email, codice 6, link 4, reset 3. Il contatore sta in Postgres (`auth_rate_hit`, migrazione `20261012010000_auth_rate_limits.sql`); finché la migrazione non c'è, resta in memoria per istanza.
 - Password: almeno 10 caratteri, con lettere e numeri.
 - Sessione: dura al massimo 7 giorni dall'accesso e scade dopo 12 ore senza attività (`lib/auth/session.ts`, controllata in `middleware.ts`).
 - Header di sicurezza in `next.config.mjs` (HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`).
@@ -174,7 +174,7 @@ Per accenderlo in Supabase (progetto `competia`):
 1. Authentication → URL Configuration: Site URL `https://www.competia.work`; Redirect URLs `https://www.competia.work/**` e, per le anteprime, `https://competia-work-*-andrea-riccis-projects-6714dfee.vercel.app/**`.
 2. Authentication → Hooks → Send Email → HTTPS `https://www.competia.work/api/email/auth-hook`; il segreto generato va in `SEND_EMAIL_HOOK_SECRET` su Vercel (Production e Preview).
 3. Authentication → Sign In / Providers → Email: disattivare "Allow new users to sign up"; Email OTP Expiration 3600 secondi; Minimum password length 10 con "Letters and digits".
-4. Applicare `supabase/migrations/20261010210000_auth_rate_limits.sql`.
+4. Applicare `supabase/migrations/20261012010000_auth_rate_limits.sql`.
 5. Invitare la prima persona (Authentication → Users → Invite user) e renderla amministratrice:
    ```sql
    update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}' where email = 'nome@azienda.it';
