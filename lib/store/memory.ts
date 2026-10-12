@@ -2,6 +2,7 @@
 // local work and previews, not for production, where every function instance has its own copy.
 import { randomUUID } from "node:crypto";
 import { competitors, signals, sources } from "../demo-data";
+import { DEFAULT_INTERVAL_HOURS } from "../scraper/schedule";
 import type { Competitor, Signal, Source } from "../domain";
 import type {
   NewCompetitor,
@@ -77,6 +78,7 @@ export const memoryStore: Store = {
     const source: Source = {
       id: shortId("src"),
       ...input,
+      checkIntervalHours: input.checkIntervalHours ?? DEFAULT_INTERVAL_HOURS,
       addedAt: now,
       lastObservedAt: now,
       status: "active",
