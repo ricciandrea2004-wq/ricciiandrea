@@ -367,7 +367,12 @@ export function createSupabaseStore(config: Config): Store {
     },
 
     async pruneHistory() {
-      await request("/rpc/prune_scrape_history", { method: "POST", headers: { Prefer: "return=minimal" }, body: "{}" });
+      // Snapshots only for now: run history grows by one run a day and is not pruned yet.
+      await request("/rpc/prune_source_snapshots", {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ keep: 30 }),
+      });
     },
   };
   return store;

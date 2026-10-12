@@ -1,5 +1,6 @@
 -- Competia: per-source check frequency, failure backoff, and the history of scraper runs.
--- Not applied to the live project yet: it needs Andrea's OK first.
+-- Applied to the live project on 2026-10-12 with Andrea's OK, as two migrations
+-- (sources_check_frequency, scrape_runs_and_source_checks).
 --
 -- sources.check_interval_hours: how often the page is read (the daily cron makes 24 the shortest
 --   effective interval on Vercel Hobby). sources.failure_count: failed checks in a row, used to
@@ -44,19 +45,3 @@ create index if not exists source_checks_signal_idx on public.source_checks (sig
 
 alter table public.scrape_runs enable row level security;
 alter table public.source_checks enable row level security;
-
--- Called by the daily cron after its run: keeps the last 30 snapshots per source and 90 days of
--- runs (their page checks go with them).
-create or replace function public.prune_scrape_history(keep_snapshots integer default 30, keep_days integer default 90)
-returns void
-language plpgsql
-security invoker
-set search_path = ''
-as $$
-begin
-  perform public.prune_source_snapshots(keep_snapshots);
-  delete from public.scrape_runs where started_at < now() - make_interval(days => keep_days);
-end;
-$$;
-revoke execute on function public.prune_scrape_history(integer, integer) from public, anon, authenticated;
-grant execute on function public.prune_scrape_history(integer, integer) to service_role;

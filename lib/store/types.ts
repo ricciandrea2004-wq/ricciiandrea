@@ -93,6 +93,6 @@ export interface Store {
   listRuns(limit: number): Promise<ScrapeRunSummary[]>;
   getRun(id: string): Promise<(ScrapeRunSummary & { checks: SourceCheckLog[] }) | null>;
   listChecks(sourceId: string, limit: number): Promise<SourceCheckLog[]>;
-  // Drops old snapshots and check history. Safe to skip: it only bounds storage.
+  // Drops old snapshots. Safe to skip: it only bounds storage.
   pruneHistory(): Promise<void>;
 }

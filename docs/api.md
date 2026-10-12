@@ -217,7 +217,7 @@ Un giro con `checks`: ogni pagina letta, con `sourceId`, ora, `outcome`, `messag
 
 Solo per Vercel Cron, ogni giorno alle 05:00 UTC (`vercel.json`). Vercel manda da solo `Authorization: Bearer $CRON_SECRET` quando la variabile `CRON_SECRET` è impostata; senza, la rotta risponde 503 e non fa niente.
 
-Sul piano Hobby di Vercel un cron può girare al massimo una volta al giorno, con un orario preciso solo all'ora (05:00–05:59), e una funzione dura al massimo 300 secondi. Il cron ha `maxDuration = 300`, legge fino a 100 fonti e si ferma da solo dopo circa 270 secondi; poi chiama `prune_scrape_history()`, che tiene le ultime 30 copie per fonte e 90 giorni di storico. `POST /scrape` ha `maxDuration = 60` e si ferma dopo 45 secondi.
+Sul piano Hobby di Vercel un cron può girare al massimo una volta al giorno, con un orario preciso solo all'ora (05:00–05:59), e una funzione dura al massimo 300 secondi. Il cron ha `maxDuration = 300`, legge fino a 100 fonti e si ferma da solo dopo circa 270 secondi; poi chiama `prune_source_snapshots(30)`, che tiene le ultime 30 copie per fonte. `POST /scrape` ha `maxDuration = 60` e si ferma dopo 45 secondi.
 
 ## Variabili d'ambiente
 
@@ -244,7 +244,7 @@ curl -H "Authorization: Bearer prova" localhost:3000/api/v1/sources
 - C'è un'organizzazione, `Competia` (slug `competia`): il suo `id` va in `COMPETIA_ORGANIZATION_ID`.
 - Il 10 ottobre 2026 è stata applicata anche `supabase/migrations/20261010110000_signals_fk_indexes.sql` (indici sui collegamenti dei segnali, suggeriti dall'advisor di Supabase).
 - Lo store Supabase è stato provato contro PostgREST 12 in locale, con la stessa migrazione: tutte le rotte, un controllo con prezzo cambiato e una pagina bloccata da robots.txt.
-- **Da applicare:** `supabase/migrations/20261010210000_scrape_runs_and_frequency.sql` (frequenza ed errori di fila sulle fonti, tabelle `scrape_runs` e `source_checks`, funzione `prune_scrape_history`). Va applicata prima di pubblicare il codice che la usa: senza le colonne nuove i controlli sul database falliscono. Provata in locale con PostgREST 12.
+- Il 12 ottobre 2026 è stata applicata `supabase/migrations/20261010210000_scrape_runs_and_frequency.sql` (frequenza ed errori di fila sulle fonti, tabelle `scrape_runs` e `source_checks`, stesse regole di accesso).
 
 ## Cosa manca
 
@@ -257,4 +257,5 @@ curl -H "Authorization: Bearer prova" localhost:3000/api/v1/sources
 
 - Le pagine costruite solo con JavaScript risultano vuote (errore "nessun testo leggibile"). Per quelle servirà un browser headless o un servizio gestito: da valutare fonte per fonte.
 - I PDF (listini) non sono ancora letti.
+- Lo storico dei giri (`scrape_runs`, `source_checks`) non viene ancora sfoltito: cresce di un giro al giorno.
 - Il controllo DNS anti-indirizzi privati avviene prima della richiesta; un dominio che cambia indirizzo nel mezzo (DNS rebinding) non è ancora coperto.
