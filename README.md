@@ -8,7 +8,7 @@ La landing in `../landing/` resta separata: ci lavora il thread Supabase + Resen
 
 - **Costruito**: tutte le 33 pagine F1, compilate con `next build` (48 percorsi generati) e provate in un browser (chiaro e scuro, desktop e mobile).
 - **Dati del workspace**: di esempio, in `lib/demo-data.ts`. Nessuna scrittura: i bottoni che salverebbero (nuovo segnale, verifica, inviti, impostazioni) mostrano un avviso che il database non è ancora collegato.
-- **Accesso**: le pagine ci sono, ma il login con link via email (Supabase Auth) non è collegato e `/app` non è protetta. Il banner giallo in cima al workspace lo dice.
+- **Accesso**: `/app` è solo per chi ha fatto l'accesso (Supabase Auth, controllato in `middleware.ts`). Si entra con il link via email (predefinito), con il codice a 6 cifre della stessa email o con la password, se la persona ne ha impostata una. "Password dimenticata" manda un link per sceglierne una nuova. Gli account si creano solo su invito: chi non ha un account riceve la stessa risposta ma nessuna email. Vedi "Accesso" più sotto.
 - **Richiedi accesso**: usa lo stesso endpoint `POST /api/access-request` della landing (copiato in `app/api/access-request/route.ts`), con le stesse variabili `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM`.
 - **Analytics**: `/analytics` legge Umami lato server ed è chiusa da HTTP Basic auth. Senza password impostata risponde 503.
 - **Testi legali**: bozze con parti tra parentesi quadre da completare e far rivedere.
@@ -32,7 +32,7 @@ Verifica: `npm run typecheck` e `npm run build`.
 
 | Variabile | Serve a |
 |---|---|
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | salvare le richieste di accesso |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | salvare le richieste di accesso; login e sessione (senza, `/app` resta chiusa) |
 | `RESEND_API_KEY`, `RESEND_FROM` | email di conferma della richiesta e tutte le email di `lib/email/` |
 | `EMAIL_SENDING` | `off` (predefinito: nessun invio), `interno` (solo agli indirizzi del team), `on` (a tutti) |
 | `EMAIL_INTERNAL_TO` | indirizzi del team, separati da virgola (predefinito `ciao@competia.work`) |
@@ -59,7 +59,7 @@ app/
   (accesso)/       accedi, controlla l'email, invito
   app/             workspace con sidebar (segnali, fonti, competitor, briefing, impostazioni)
   analytics/       dashboard interna Umami
-  auth/callback/   ritorno dal link di accesso (per ora solo redirect)
+  auth/confirm/    ritorno dal link dell'email: verifica il token e apre la sessione (auth/callback fa lo stesso)
   api/access-request/   endpoint del modulo di accesso
   api/v1/          API: competitor, fonti, segnali, controllo
   api/cron/scrape/ controllo giornaliero (Vercel Cron)
@@ -70,6 +70,8 @@ components/        componenti condivisi; workspace/ per la shell del workspace
 components/motion/ animazioni (motion e Lottie)
 lib/
   domain.ts        tipi ed etichette in italiano
+  supabase/        client Supabase lato server (cookie della sessione)
+  auth/actions.ts  accesso: link, codice, password, reset, uscita
   demo-data.ts     dati di esempio del workspace
   nav.ts           voci di navigazione
   umami.ts         lettura delle statistiche
@@ -78,7 +80,7 @@ lib/
 supabase/migrations/   schema SQL (da applicare con l'OK di Andrea)
 docs/api.md      documentazione dell'API
   email/           template e invio delle email (vedi "Email")
-middleware.ts      password su /analytics
+middleware.ts      sessione obbligatoria su /app, password su /analytics
 public/lottie/     animazioni Lottie (generate da scripts/lottie/build.mjs)
 public/email/      GIF e PNG delle email (generate da scripts/email/build-assets.mjs)
 ```
@@ -123,7 +125,7 @@ Tutte le email stanno in `lib/email/` e usano lo stesso motore grafico del sito:
 |---|---|---|
 | `richiesta-ricevuta` | qualcuno chiede l'accesso | `POST /api/email/evento`; la rotta `/api/access-request` manda ancora la sua conferma in testo (è di un altro thread, si collega quando la si tocca) |
 | `accesso-approvato` | si apre un posto o un membro invita un collega | `POST /api/email/evento`, oppure l'hook di Supabase per gli inviti (`invite`) |
-| `link-accesso` | accesso con link via email, con il codice a 6 cifre | hook "Send Email" di Supabase Auth → `/api/email/auth-hook` |
+| `link-accesso` | accesso con link via email, con il codice a 6 cifre; stessa email con testi diversi per conferma dell'indirizzo e reset della password | hook "Send Email" di Supabase Auth → `/api/email/auth-hook` |
 | `benvenuto` | primo accesso | `POST /api/email/evento` (da un webhook di Supabase o da `/auth/callback` quando l'accesso sarà collegato) |
 | `riepilogo-settimanale` | ogni lunedì alle 7:00 UTC | Vercel Cron → `/api/cron/riepilogo-settimanale` |
 | `segnali-da-verificare` | un segnale resta "Da verificare" oltre la soglia (una volta per segnale) | Vercel Cron ogni mattina → `/api/cron/segnali-da-verificare` |
@@ -140,9 +142,52 @@ Anteprime: `npm run email:anteprime` (con `NODE_PATH=$(npm root -g)` se Playwrig
 Per accendere:
 
 1. `EMAIL_SENDING=interno` su Vercel: arrivano solo a `ciao@competia.work` (serve che la casella esista).
-2. Login con link: in Supabase, Authentication → Hooks → Send Email → HTTPS `https://www.competia.work/api/email/auth-hook`; il segreto generato va in `SEND_EMAIL_HOOK_SECRET`.
+2. Login con link e reset della password: vedi "Accesso" qui sotto.
 3. Eventi: un valore casuale in `EMAIL_EVENTS_SECRET`, lo stesso nel webhook che chiama `/api/email/evento`.
 4. Quando è tutto provato, `EMAIL_SENDING=on`.
+
+## Accesso
+
+Tutto passa dal server (server action e `/auth/confirm`): le chiavi Supabase non arrivano al browser e la sessione sta in cookie `httpOnly`.
+
+| Pagina | Cosa fa |
+|---|---|
+| `/accedi` | email e password (predefinito) oppure codice via email |
+| `/accedi/controlla-email` | dopo l'invio; si scrive il codice a 6 cifre oppure si apre il link |
+| `/accedi/password-dimenticata` | manda il link per scegliere una nuova password |
+| `/accedi/nuova-password` | imposta la password (primo accesso da invito, link di reset, Impostazioni → Profilo) |
+| `/auth/confirm` | dove arrivano i link delle email; poi porta a `next` (solo pagine `/app`) |
+
+Sicurezza:
+
+- Solo su invito: chi non ha un account riceve la stessa risposta di chi ce l'ha, e nessuna email (nessuna enumerazione degli account).
+- Limiti ai tentativi per email e per IP (`lib/auth/rate-limit.ts`): password 8 ogni 15 minuti per email, codice 6, link 4, reset 3. Il contatore sta in Postgres (`auth_rate_hit`, migrazione `20261012010000_auth_rate_limits.sql`); finché la migrazione non c'è, resta in memoria per istanza.
+- Password: almeno 10 caratteri, con lettere e numeri.
+- Sessione: dura al massimo 7 giorni dall'accesso e scade dopo 12 ore senza attività (`lib/auth/session.ts`, controllata in `middleware.ts`).
+- Header di sicurezza in `next.config.mjs` (HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`).
+- Chi amministra (può invitare persone) ha `app_metadata.role = "admin"`.
+
+I link delle email li costruisce `/api/email/auth-hook` e puntano al sito da cui è partita la richiesta (produzione o anteprima), se Supabase lo ha nella lista degli URL permessi; altrimenti al Site URL.
+
+Per accenderlo in Supabase (progetto `competia`):
+
+1. Authentication → URL Configuration: Site URL `https://www.competia.work`; Redirect URLs `https://www.competia.work/**` e, per le anteprime, `https://competia-work-*-andrea-riccis-projects-6714dfee.vercel.app/**`.
+2. Authentication → Hooks → Send Email → HTTPS `https://www.competia.work/api/email/auth-hook`; il segreto generato va in `SEND_EMAIL_HOOK_SECRET` su Vercel (Production e Preview).
+3. Authentication → Sign In / Providers → Email: disattivare "Allow new users to sign up"; Email OTP Expiration 3600 secondi; Minimum password length 10 con "Letters and digits".
+4. Applicare `supabase/migrations/20261012010000_auth_rate_limits.sql`.
+5. Invitare la prima persona (Authentication → Users → Invite user) e renderla amministratrice:
+   ```sql
+   update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}' where email = 'nome@azienda.it';
+   ```
+   Dopo, gli inviti si mandano da Impostazioni → Membri.
+6. `EMAIL_SENDING` su Vercel: con `off` l'hook risponde 503 e chi prova a entrare vede "Non siamo riusciti a mandare l'email"; con `interno` arrivano solo agli indirizzi di `EMAIL_INTERNAL_TO`; con `on` a tutti.
+7. `SUPABASE_SERVICE_ROLE_KEY` serve al workspace (dati veri, inviti, elenco membri): oggi c'è solo in Production; per provare l'anteprima con i dati veri va aggiunta anche in Preview.
+
+## Workspace
+
+Le pagine di `/app` leggono da `lib/workspace/data.ts`, che usa `getStore()`: con `COMPETIA_STORE=supabase` sono i dati veri dell'organizzazione `COMPETIA_ORGANIZATION_ID`, altrimenti (o se il database non risponde) i dati di esempio con un avviso in alto.
+
+Con i dati veri si può aggiungere un competitor (`/app/competitor/nuovo`), aggiungere una fonte (`/app/fonti/nuova`, che legge subito la pagina una volta), lanciare "Controlla ora" su una fonte e invitare persone. Verificare o scartare un segnale e scrivere briefing restano sui dati di esempio finché lo store non li supporta.
 
 ## Scorciatoie nel workspace
 
@@ -151,6 +196,5 @@ Per accendere:
 
 ## Prossimi passi
 
-1. Supabase Auth con link via email, sessione nel middleware e protezione di `/app`.
-2. Schema del database (organizzazioni, membri, competitor, fonti, segnali, briefing) con RLS, al posto di `lib/demo-data.ts`.
-3. Unire la landing in questo progetto e pubblicare.
+1. Schema del database (organizzazioni, membri, competitor, fonti, segnali, briefing) con RLS, al posto di `lib/demo-data.ts`.
+2. Unire la landing in questo progetto e pubblicare.

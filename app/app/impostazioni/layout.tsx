@@ -1,9 +1,10 @@
 import SettingsTabs from "@/components/workspace/SettingsTabs";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { organization } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 
-export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
+  const { organization } = await getWorkspace();
   return (
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Impostazioni" }]} />

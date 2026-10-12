@@ -4,21 +4,30 @@ import { notFound } from "next/navigation";
 import Icon from "@/components/Icon";
 import { CategoryTag, StatusTag } from "@/components/SignalTags";
 import CopyLinkButton from "@/components/workspace/CopyLinkButton";
+import { CheckNowButton } from "@/components/workspace/DataForms";
 import Topbar from "@/components/workspace/Topbar";
-import { getCompetitor, getSource, organization, signalsForSource, sources } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import Tag from "@/components/Tag";
 import { formatDate, formatShortDate, sourceStatusColor, sourceStatusLabel } from "@/lib/domain";
 
-export function generateStaticParams() {
-  return sources.map((s) => ({ id: s.id }));
-}
+// "Controlla ora" reads the page from here.
+export const maxDuration = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { getCompetitor, getSource } = await getWorkspace();
   const { id } = await params;
   return { title: getSource(id)?.label ?? "Fonte" };
 }
 
-export default async function SourcePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SourcePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ aggiunta?: string }>;
+}) {
+  const { live, getCompetitor, getSource, organization, signalsForSource } = await getWorkspace();
+  const { aggiunta } = await searchParams;
   const { id } = await params;
   const source = getSource(id);
   if (!source) notFound();
@@ -80,6 +89,20 @@ export default async function SourcePage({ params }: { params: Promise<{ id: str
           </dd>
         </dl>
 
+        {aggiunta && (
+          <p className="auth-notice" role="status" style={{ marginBottom: 24 }}>
+            Fonte aggiunta.{" "}
+            {source.lastCheckedAt
+              ? "Abbiamo già letto la pagina una volta: dal prossimo controllo ogni cambiamento diventa un segnale."
+              : "La leggiamo al prossimo controllo automatico, ogni mattina."}
+          </p>
+        )}
+        {live && (
+          <div style={{ marginBottom: 32 }}>
+            <CheckNowButton sourceId={source.id} />
+          </div>
+        )}
+
         {source.note && (
           <section>
             <h2 className="block-title">Note</h2>
@@ -91,7 +114,7 @@ export default async function SourcePage({ params }: { params: Promise<{ id: str
           <h2 className="block-title">Segnali da questa fonte</h2>
           {related.length === 0 ? (
             <div className="empty">
-              <strong>Ancora nessun segnale</strong>Quando registri un cambiamento da questa pagina, compare qui.
+              <strong>Ancora nessun segnale</strong>Quando la pagina cambia, il segnale compare qui.
             </div>
           ) : (
             <ul className="list">

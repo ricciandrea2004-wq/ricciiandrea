@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import BriefingComposer from "@/components/workspace/BriefingComposer";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { competitors, organization, signals, sources } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 
 export const metadata: Metadata = { title: "Nuovo briefing" };
 
-export default function NewBriefingPage() {
+export default async function NewBriefingPage() {
+  const { competitors, organization, signals, sources } = await getWorkspace();
   return (
     <>
       <Topbar crumbs={[{ label: organization.name, href: "/app" }, { label: "Briefing", href: "/app/briefing" }, { label: "Nuovo briefing" }]} />

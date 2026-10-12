@@ -4,12 +4,13 @@ import Icon from "@/components/Icon";
 import Tag from "@/components/Tag";
 import PageHead from "@/components/workspace/PageHead";
 import Topbar from "@/components/workspace/Topbar";
-import { briefings, organization } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 import { briefingStatusLabel, formatShortDate } from "@/lib/domain";
 
 export const metadata: Metadata = { title: "Briefing" };
 
-export default function BriefingsPage() {
+export default async function BriefingsPage() {
+  const { briefings, organization } = await getWorkspace();
   const rows = [...briefings].sort((a, b) => b.date.localeCompare(a.date));
   return (
     <>

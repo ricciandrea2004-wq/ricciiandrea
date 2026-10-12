@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import SettingsForm from "@/components/workspace/SettingsForm";
-import { organization } from "@/lib/demo-data";
+import { getWorkspace } from "@/lib/workspace/data";
 
 export const metadata: Metadata = { title: "Organizzazione" };
 
-export default function OrganizationPage() {
+export default async function OrganizationPage() {
+  const { organization } = await getWorkspace();
   return (
     <section className="ds-page">
       <h2 className="block-title">Organizzazione</h2>

@@ -12,6 +12,8 @@
     "test:scraper": "tsx scripts/scraper/selftest.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.3",
     "lottie-react": "3.1.2",
     "motion": "13.4.4",
     "next": "15.5.27",

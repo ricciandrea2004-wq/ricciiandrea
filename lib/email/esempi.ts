@@ -24,7 +24,7 @@ export const esempi: { [K in keyof EmailData]: EmailData[K] } = {
     organizzazione: organization.name,
   },
   "link-accesso": {
-    url: "https://kzylimybxebkmhewnkjf.supabase.co/auth/v1/verify?token=esempio&type=magiclink&redirect_to=https%3A%2F%2Fwww.competia.work%2Fauth%2Fcallback",
+    url: "https://www.competia.work/auth/confirm?token_hash=esempio&type=magiclink",
     codice: "482913",
   },
   benvenuto: { nome: "Giulia", organizzazione: organization.name },
