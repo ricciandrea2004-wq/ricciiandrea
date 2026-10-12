@@ -2,6 +2,7 @@
 // scoped to one organization (COMPETIA_ORGANIZATION_ID) until the API has per-user tokens.
 // Needs the tables in supabase/migrations/ up to 20261010210000_scrape_runs_and_frequency.sql.
 import type { Competitor, Signal, Source } from "../domain";
+import { DEFAULT_INTERVAL_HOURS } from "../scraper/schedule";
 import type {
   NewCompetitor,
   NewSignal,
@@ -203,7 +204,7 @@ export function createSupabaseStore(config: Config): Store {
           url: input.url,
           selector: input.selector,
           note: input.note,
-          check_interval_hours: input.checkIntervalHours,
+          check_interval_hours: input.checkIntervalHours ?? DEFAULT_INTERVAL_HOURS,
         }),
       });
       return sourceFromRow(rows[0]);

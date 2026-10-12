@@ -22,7 +22,8 @@ export type NewSource = {
   label: string;
   note: string;
   selector: string | null;
-  checkIntervalHours: number;
+  // Hours between two checks; the store uses 24 when it is left out.
+  checkIntervalHours?: number;
 };
 
 export type SourcePatch = Partial<Pick<Source, "label" | "note" | "selector" | "status" | "checkIntervalHours">>;
