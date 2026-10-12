@@ -1,5 +1,6 @@
 import { checkBearer, fail, ok, readJson, withStore } from "@/lib/api";
 import type { SourceStatus } from "@/lib/domain";
+import { isValidInterval, MAX_INTERVAL_HOURS, MIN_INTERVAL_HOURS, nextCheckAt } from "@/lib/scraper/schedule";
 import type { SourcePatch } from "@/lib/store/types";
 
 export const runtime = "nodejs";
@@ -14,10 +15,12 @@ export async function GET(request: Request, { params }: Context) {
   return withStore(async (store) => {
     const source = await store.getSource(id);
     if (!source) return fail(404, "not_found", "Fonte non trovata.");
-    const snapshot = await store.latestSnapshot(id);
+    const [snapshot, recentChecks] = await Promise.all([store.latestSnapshot(id), store.listChecks(id, 10)]);
     return ok(
       {
         ...source,
+        nextCheckAt: nextCheckAt(source),
+        recentChecks,
         latestSnapshot: snapshot && {
           fetchedAt: snapshot.fetchedAt,
           finalUrl: snapshot.finalUrl,
@@ -32,7 +35,7 @@ export async function GET(request: Request, { params }: Context) {
   });
 }
 
-// Pause or resume a source, or change its label, note or selector.
+// Pause or resume a source, or change its label, note, selector or check interval.
 export async function PATCH(request: Request, { params }: Context) {
   const denied = checkBearer(request, "COMPETIA_API_TOKEN");
   if (denied) return denied;
@@ -52,8 +55,16 @@ export async function PATCH(request: Request, { params }: Context) {
     }
     patch.status = body.status as SourceStatus;
   }
+  if (body.checkIntervalHours !== undefined) {
+    if (!isValidInterval(body.checkIntervalHours)) {
+      return fail(400, "bad_request", "Dati non validi.", {
+        checkIntervalHours: `Ore intere tra ${MIN_INTERVAL_HOURS} e ${MAX_INTERVAL_HOURS}.`,
+      });
+    }
+    patch.checkIntervalHours = body.checkIntervalHours;
+  }
   if (Object.keys(patch).length === 0) {
-    return fail(400, "bad_request", "Niente da aggiornare: usa label, note, selector o status.");
+    return fail(400, "bad_request", "Niente da aggiornare: usa label, note, selector, status o checkIntervalHours.");
   }
   return withStore(async (store) => {
     const source = await store.updateSource(id, patch);
