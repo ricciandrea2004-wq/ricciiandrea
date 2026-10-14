@@ -2,7 +2,7 @@ import Link from "next/link";
 import AccessForm from "@/components/AccessForm";
 import Icon from "@/components/Icon";
 import { Feature, SectionHead } from "@/components/Marketing";
-import SignalExample, { heroSamples } from "@/components/SignalExample";
+import LaunchVideo from "@/components/motion/LaunchVideo";
 import LottieAnimation, { type LottieName } from "@/components/motion/LottieAnimation";
 import { categoryColor } from "@/lib/domain";
 
@@ -65,7 +65,7 @@ export default function HomePage() {
               Accesso su invito, pochi team alla volta.
             </p>
           </div>
-          <SignalExample className="ds-pop" samples={heroSamples} />
+          <LaunchVideo className="ds-pop" />
         </div>
       </section>
 

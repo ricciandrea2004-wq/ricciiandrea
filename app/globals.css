@@ -823,6 +823,55 @@ fieldset {
   }
 }
 
+/* Video di lancio nella hero: si comporta come un'illustrazione, senza controlli né interazione. */
+.launch-video {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1;
+  justify-self: center;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--ink);
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.launch-video video,
+.launch-video__still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.launch-video__still {
+  opacity: 0;
+}
+
+/* Fotogramma fermo: movimento ridotto, autoplay rifiutato o pagina senza JavaScript. */
+.launch-video[data-still] .launch-video__still,
+html:not(.js) .launch-video__still {
+  opacity: 1;
+}
+
+.launch-video[data-still] video,
+html:not(.js) .launch-video video {
+  visibility: hidden;
+}
+
+/* Safari in risparmio energetico disegna un tasto play: qui non deve esistere. */
+.launch-video video::-webkit-media-controls,
+.launch-video video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
 .page-hero {
   padding-block: clamp(56px, 9vw, 112px) clamp(40px, 6vw, 72px);
   background: var(--bg-subtle);
