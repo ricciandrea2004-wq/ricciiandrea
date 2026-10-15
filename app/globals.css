@@ -823,7 +823,15 @@ fieldset {
   }
 }
 
-/* Video di lancio nella hero: si comporta come un'illustrazione, senza controlli né interazione. */
+/* Hero con il video di lancio: in entrambi i temi prende il fondo scuro del video (#1c1c1c),
+   così il video non ha bordi e sembra disegnato sulla pagina. */
+.hero--video {
+  --bg: #1c1c1c;
+  background: var(--bg);
+}
+
+/* Video di lancio: si comporta come un'illustrazione, senza controlli né interazione.
+   I bordi sfumano nel fondo della hero. */
 .launch-video {
   position: relative;
   width: 100%;
@@ -831,9 +839,15 @@ fieldset {
   aspect-ratio: 1;
   justify-self: center;
   overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: var(--ink);
-  box-shadow: var(--shadow-lg);
+  background: var(--bg);
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 5%, #000 95%, transparent),
+    linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 5%, #000 95%, transparent),
+    linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
+  mask-composite: intersect;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
