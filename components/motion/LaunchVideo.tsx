@@ -46,7 +46,7 @@ export default function LaunchVideo({ className = "" }: { className?: string }) 
       className={`launch-video ${className}`}
       data-still={still || undefined}
       role="img"
-      aria-label="Animazione: il prezzo del piano Pro di un competitor scende da 52 a 48 euro, diventa un segnale con la sua fonte, viene verificato ed entra nel briefing."
+      aria-label="Animazione: sulla pagina prezzi di un competitor il piano Pro scende da 52 a 48 euro; il cambio diventa un segnale con la fonte e la data, una persona lo verifica e finisce nel briefing della settimana."
     >
       <video
         ref={video}

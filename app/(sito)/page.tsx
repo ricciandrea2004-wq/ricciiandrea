@@ -40,7 +40,7 @@ const audience = [
 export default function HomePage() {
   return (
     <>
-      <section className="hero">
+      <section className="hero hero--video ink">
         <div className="container hero__grid">
           <div className="ds-stagger">
             <p className="eyebrow" style={{ "--i": 0 } as React.CSSProperties}>
