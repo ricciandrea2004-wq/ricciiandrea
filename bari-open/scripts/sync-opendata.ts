@@ -85,12 +85,14 @@ async function tryFetchDistricts(): Promise<{
 async function main() {
   console.log("Sync Vista Bari open data…");
 
-  const [centralinePkg, flowsPkg, accidentsPkg, districtAttempt] = await Promise.all([
-    packageShow("centraline-semaforiche"),
-    packageShow("flussi-di-traffico-giornalieri"),
-    packageShow("incidenti-stradali-anno-2025"),
-    tryFetchDistricts(),
-  ]);
+  const [centralinePkg, flowsPkg, accidentsPkg, accidents2024Pkg, districtAttempt] =
+    await Promise.all([
+      packageShow("centraline-semaforiche"),
+      packageShow("flussi-di-traffico-giornalieri"),
+      packageShow("incidenti-stradali-anno-2025"),
+      packageShow("incidenti-stradali-anno-2024").catch(() => null),
+      tryFetchDistricts(),
+    ]);
 
   const centralineRes = pickLatestResource(centralinePkg.resources, {
     format: "JSON",
@@ -108,16 +110,40 @@ async function main() {
     `Flows: downloading ${flowsResources.length} monthly CSV — ${flowsResources.map((r) => r.name).join(", ")}`,
   );
 
-  const [centralineText, accidentsText, ...flowsTexts] = await Promise.all([
+  let accidents2024Text: string | null = null;
+  let accidents2024Res: CkanResource | null = null;
+  if (accidents2024Pkg) {
+    try {
+      accidents2024Res = pickLatestResource(accidents2024Pkg.resources, { format: "JSON" });
+    } catch (err) {
+      console.warn("Accidents 2024: skip resource —", err instanceof Error ? err.message : err);
+    }
+  } else {
+    console.log("Accidents 2024: package non trovato su CKAN — toggle multi-anno userà solo 2025.");
+  }
+
+  const [centralineText, accidentsText, accidents2024Download, ...flowsTexts] = await Promise.all([
     downloadText(centralineRes.url),
     downloadText(accidentsRes.url),
+    accidents2024Res
+      ? downloadText(accidents2024Res.url).catch((err) => {
+          console.warn("Accidents 2024 download failed:", err instanceof Error ? err.message : err);
+          return null;
+        })
+      : Promise.resolve(null),
     ...flowsResources.map((r) => downloadText(r.url)),
   ]);
+  accidents2024Text = accidents2024Download;
 
   const centraline = parseCentraline(centralineText);
   const flowBatches = flowsTexts.map((text) => parseFlowsCsv(text));
   const flows = mergeFlows(flowBatches);
-  const accidents = parseAccidents(accidentsText);
+  const accidents2025 = parseAccidents(accidentsText);
+  const accidentsPrior = accidents2024Text ? parseAccidents(accidents2024Text) : [];
+  const accidents = [...accidentsPrior, ...accidents2025];
+  if (accidentsPrior.length) {
+    console.log(`Accidents: merged ${accidentsPrior.length} (2024) + ${accidents2025.length} (2025)`);
+  }
   const cityDaily = aggregateCityDaily(flows);
   const flowMonths = countFlowMonths(flows);
   const cityDailyAvg =
@@ -148,6 +174,15 @@ async function main() {
       resourceName: accidentsRes.name,
     },
   ];
+  if (accidents2024Pkg && accidents2024Res) {
+    sources.push({
+      id: accidents2024Pkg.name,
+      title: accidents2024Pkg.title,
+      url: datasetPageUrl(accidents2024Pkg.name),
+      license: accidents2024Pkg.license_title || accidents2024Pkg.license_id || "Open data",
+      resourceName: accidents2024Res.name,
+    });
+  }
   if (districtAttempt.source) sources.push(districtAttempt.source);
 
   const bundle: VistaDataBundle = {

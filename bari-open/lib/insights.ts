@@ -141,7 +141,12 @@ export function trafficAnomalies(
     const historical = series.slice(0, -RECENT_DAYS);
     if (!historical.length) continue;
 
-    const recentAvg = mean(recent.map((p) => p.value));
+    const recentValues = recent.map((p) => p.value);
+    const recentAvg = mean(recentValues);
+    // Skip full outages (0 recent) — they dominate % ranks; keep active deviations.
+    const activeRecentDays = recentValues.filter((v) => v > 0).length;
+    if (recentAvg <= 0 || activeRecentDays < Math.ceil(RECENT_DAYS / 2)) continue;
+
     const weekdayMedians = new Map<number, number>();
     for (let wd = 0; wd < 7; wd++) {
       const vals = historical.filter((p) => utcWeekday(p.date) === wd).map((p) => p.value);
@@ -249,9 +254,10 @@ export function briefingFindings(bundle: VistaDataBundle): string[] {
   ];
 
   if (topAnomaly) {
-    const dir = topAnomaly.pctDeviation >= 0 ? "sopra" : "sotto";
+    const dir =
+      topAnomaly.pctDeviation >= 0 ? "sopra la mediana storica" : "sotto la mediana storica";
     findings.push(
-      `Anomalia traffico: ${topAnomaly.code} (${topAnomaly.name}) negli ultimi 7 giorni è ${dir} della mediana storica del medesimo giorno della settimana di circa ${formatIt(Math.abs(topAnomaly.pctDeviation))}%.`,
+      `Anomalia traffico: ${topAnomaly.code} (${topAnomaly.name}) negli ultimi 7 giorni è ${dir} del medesimo giorno della settimana di circa ${formatIt(Math.abs(topAnomaly.pctDeviation))}%.`,
     );
   } else {
     findings.push(

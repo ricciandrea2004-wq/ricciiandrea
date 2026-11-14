@@ -2,26 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
+import { LiveBusBadge } from "./LiveBusBadge";
 
-const LINKS = [
-  { href: "/mappa", label: "Mappa" },
-  { href: "/andamento", label: "Andamento" },
-  { href: "/sicurezza", label: "Sicurezza" },
-  { href: "/briefing", label: "Briefing" },
-  { href: "/ora", label: "Ora" },
-  { href: "/fonti", label: "Fonti" },
-  { href: "/per-il-comune", label: "Per il Comune" },
+const LINKS: Array<{ href: string; key: "nav_map" | "nav_trend" | "nav_safety" | "nav_briefing" | "nav_live" | "nav_sources" | "nav_pitch" | "nav_status" }> = [
+  { href: "/mappa", key: "nav_map" },
+  { href: "/andamento", key: "nav_trend" },
+  { href: "/sicurezza", key: "nav_safety" },
+  { href: "/briefing", key: "nav_briefing" },
+  { href: "/ora", key: "nav_live" },
+  { href: "/stato", key: "nav_status" },
+  { href: "/fonti", key: "nav_sources" },
+  { href: "/per-il-comune", key: "nav_pitch" },
 ];
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const { lang, setLang, t } = useI18n();
 
   return (
     <header className="site-header">
       <div className="container site-header__inner">
-        <Link href="/" className="brand" aria-label="Vista Bari home">
-          Vista <span>Bari</span>
-        </Link>
+        <div className="brand-row">
+          <Link href="/" className="brand" aria-label="Vista Bari home">
+            Vista <span>Bari</span>
+          </Link>
+          <LiveBusBadge />
+        </div>
         <nav className="nav" aria-label="Principale">
           {LINKS.map((link) => (
             <Link
@@ -29,9 +36,17 @@ export function SiteHeader() {
               href={link.href}
               aria-current={pathname === link.href ? "page" : undefined}
             >
-              {link.label}
+              {t(link.key)}
             </Link>
           ))}
+          <button
+            type="button"
+            className="chip lang-chip"
+            aria-label={lang === "it" ? "Switch to English" : "Passa all’italiano"}
+            onClick={() => setLang(lang === "it" ? "en" : "it")}
+          >
+            {t("lang_toggle")}
+          </button>
         </nav>
       </div>
     </header>

@@ -50,7 +50,14 @@ export function summarizeFlowsByDevice(flows: DeviceFlow[]): DeviceFlowSummary[]
 
 export type MapAccident = Pick<
   Accident,
-  "date" | "latitude" | "longitude" | "roadType" | "weather" | "injuries"
+  | "date"
+  | "latitude"
+  | "longitude"
+  | "roadType"
+  | "weather"
+  | "injuries"
+  | "pavementState"
+  | "propertyDamage"
 >;
 
 /** Optional municipio / quartiere outlines when present in the data bundle. */
@@ -61,6 +68,8 @@ export type MapPayload = {
   deviceFlows: DeviceFlowSummary[];
   accidents?: MapAccident[];
   districts?: MapDistricts;
+  /** Safety scores keyed by composite device key when provided by page. */
+  safetyByKey?: Record<string, number>;
 };
 
 export function toMapPayload(
@@ -68,6 +77,7 @@ export function toMapPayload(
   flows: DeviceFlow[],
   accidents?: Accident[],
   districts?: MapDistricts,
+  safetyByKey?: Record<string, number>,
 ): MapPayload {
   return {
     centraline,
@@ -79,7 +89,10 @@ export function toMapPayload(
       roadType: a.roadType,
       weather: a.weather,
       injuries: a.injuries,
+      pavementState: a.pavementState,
+      propertyDamage: a.propertyDamage,
     })),
     districts,
+    safetyByKey,
   };
 }

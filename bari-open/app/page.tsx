@@ -1,11 +1,18 @@
 import Link from "next/link";
+import { AirQualityCard } from "@/components/AirQualityCard";
+import { WeatherWidget } from "@/components/WeatherWidget";
 import { formatDateIt, formatNumber, getInsights, loadBundle } from "@/lib/data";
+import { freshnessLabel } from "@/lib/freshness";
+import { injuryRatePct } from "@/lib/metrics";
 
 export default async function HomePage() {
   const bundle = await loadBundle();
   const synced = formatDateIt(bundle.syncedAt.slice(0, 10));
   const insights = getInsights(bundle);
   const homeFindings = insights.briefingFindings.slice(0, 3);
+  const freshness = freshnessLabel(bundle.syncedAt);
+  const injuryPct = injuryRatePct(bundle);
+  const districtsOk = Boolean(bundle.districts?.features?.length);
 
   return (
     <>
@@ -41,6 +48,14 @@ export default async function HomePage() {
             </a>
             . Ultimo sync: {synced}.
           </p>
+
+          {freshness.stale ? (
+            <div className="sla-banner" role="status">
+              {freshness.messageIt}{" "}
+              <Link href="/stato">Vedi stato sync</Link>
+            </div>
+          ) : null}
+
           <div className="stat-strip">
             <div className="stat">
               <strong>{formatNumber(bundle.summary.centralineCount)}</strong>
@@ -51,8 +66,27 @@ export default async function HomePage() {
               <span>passaggi medi giornalieri in città</span>
             </div>
             <div className="stat">
-              <strong>{formatNumber(bundle.summary.accidentCount)}</strong>
-              <span>incidenti 2025 geolocalizzati</span>
+              <strong>{injuryPct.toFixed(1)}%</strong>
+              <span>
+                tasso lesioni ({formatNumber(bundle.summary.injuryAccidents)} /{" "}
+                {formatNumber(bundle.summary.accidentCount)})
+              </span>
+            </div>
+          </div>
+
+          <div className="home-live-grid">
+            <WeatherWidget />
+            <AirQualityCard />
+            <div className="home-card">
+              <p className="section__eyebrow">Copertura</p>
+              <p className="home-card__value">
+                {districtsOk ? `${bundle.districts!.features.length} zone` : "Districts n/d"}
+              </p>
+              <p className="muted" style={{ marginBottom: 0 }}>
+                {districtsOk
+                  ? "GeoJSON circoscrizioni caricato dal CKAN."
+                  : "Nessun GeoJSON circoscrizioni su CKAN (solo ZIP/shape): layer saltato."}
+              </p>
             </div>
           </div>
 

@@ -2,20 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { deviceKey } from "@/lib/device-key";
+import { useI18n } from "@/lib/i18n";
 import type { MapAccident, MapDistricts, MapPayload } from "@/lib/map-data";
 
 const EMPTY_ACCIDENTS: MapAccident[] = [];
 const ACCIDENT_MARKER_CAP = 800;
+const HISTORY_KEY = "vista-bari-recent-centraline";
+const BOOKMARK_KEY = "vista-bari-bookmarks";
 
 type AccidentCluster = {
   latitude: number;
   longitude: number;
   count: number;
   injuries: number;
-  sample: MapAccident;
+  items: MapAccident[];
 };
 
-/** Grid-cluster accidents (~0.001° cells), then keep the densest/recent up to cap. */
 function clusterAccidents(
   accidents: MapAccident[],
   cap = ACCIDENT_MARKER_CAP,
@@ -29,24 +31,20 @@ function clusterAccidents(
     if (prev) {
       prev.count += 1;
       if (a.injuries) prev.injuries += 1;
-      if ((a.date || "") > (prev.sample.date || "")) prev.sample = a;
+      prev.items.push(a);
     } else {
       cells.set(key, {
         latitude: lat,
         longitude: lon,
         count: 1,
         injuries: a.injuries ? 1 : 0,
-        sample: a,
+        items: [a],
       });
     }
   }
   let list = [...cells.values()];
   if (list.length > cap) {
-    list.sort(
-      (a, b) =>
-        b.count - a.count ||
-        (b.sample.date || "").localeCompare(a.sample.date || ""),
-    );
+    list.sort((a, b) => b.count - a.count);
     list = list.slice(0, cap);
   }
   return list;
@@ -65,17 +63,48 @@ function resolveInitialKey(
   return centraline[0] ? deviceKey(centraline[0]) : null;
 }
 
+function readList(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeList(key: string, values: string[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(values));
+  } catch {
+    /* ignore */
+  }
+}
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 type Props = {
   payload: MapPayload;
-  /** Composite device key (`device_db:device_type:device_id`) from `?c=`. */
   initialSelectedKey?: string | null;
-  /** Accidents overlay: off on /mappa, on on /sicurezza. */
   initialShowAccidents?: boolean;
   accidentFilter?: {
     injuriesOnly?: boolean;
     weather?: string;
+    roadType?: string;
+    pavement?: "all" | "wet" | "dry";
+    propertyDamage?: "all" | "yes" | "no";
+    year?: string;
   };
-  /** Optional GeoJSON outlines; also read from `payload.districts`. */
   districts?: MapDistricts;
 };
 
@@ -86,6 +115,7 @@ export function TrafficMap({
   accidentFilter,
   districts: districtsProp,
 }: Props) {
+  const { t } = useI18n();
   const { centraline, deviceFlows } = payload;
   const accidents = payload.accidents ?? EMPTY_ACCIDENTS;
   const districts = districtsProp ?? payload.districts;
@@ -93,6 +123,8 @@ export function TrafficMap({
   const [selectedKey, setSelectedKey] = useState<string | null>(() =>
     resolveInitialKey(centraline, initialSelectedKey),
   );
+  const [compareKey, setCompareKey] = useState<string | null>(null);
+  const [compareArmed, setCompareArmed] = useState(false);
   const [showCentraline, setShowCentraline] = useState(true);
   const [showAccidents, setShowAccidents] = useState(initialShowAccidents);
   const [injuriesOnly, setInjuriesOnly] = useState(
@@ -100,7 +132,45 @@ export function TrafficMap({
   );
   const [query, setQuery] = useState("");
   const [ready, setReady] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measurePts, setMeasurePts] = useState<Array<[number, number]>>([]);
+  const [showLegend, setShowLegend] = useState(false);
+  const [heatMode, setHeatMode] = useState(false);
+  const [minFlow, setMinFlow] = useState(0);
+  const [opacity, setOpacity] = useState(0.75);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [clusterList, setClusterList] = useState<AccidentCluster | null>(null);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<import("leaflet").Map | null>(null);
   const didFlyToDeepLink = useRef(false);
+  const selectRef = useRef<(key: string) => void>(() => undefined);
+
+  useEffect(() => {
+    setRecent(readList(HISTORY_KEY).slice(0, 8));
+    setBookmarks(readList(BOOKMARK_KEY));
+  }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      const typing =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable);
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const byDevice = useMemo(() => {
     return new Map(deviceFlows.map((f) => [f.key, f]));
@@ -112,8 +182,19 @@ export function TrafficMap({
     return m;
   }, [deviceFlows]);
 
+  const avgByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const f of deviceFlows) {
+      const days = f.series.length || 1;
+      map.set(f.key, f.total / days);
+    }
+    return map;
+  }, [deviceFlows]);
+
   const selected = centraline.find((c) => deviceKey(c) === selectedKey) ?? null;
   const selectedFlow = selected ? byDevice.get(deviceKey(selected)) : undefined;
+  const compare = centraline.find((c) => deviceKey(c) === compareKey) ?? null;
+  const compareFlow = compare ? byDevice.get(deviceKey(compare)) : undefined;
 
   const filteredAccidents = useMemo(() => {
     if (!showAccidents) return EMPTY_ACCIDENTS;
@@ -125,6 +206,18 @@ export function TrafficMap({
           return false;
         }
       }
+      if (accidentFilter?.roadType && accidentFilter.roadType !== "tutti") {
+        if (a.roadType !== accidentFilter.roadType) return false;
+      }
+      if (accidentFilter?.pavement === "wet") {
+        if (!/bagnato|umid|brina|viscido/i.test(a.pavementState || "")) return false;
+      }
+      if (accidentFilter?.pavement === "dry") {
+        if (!/asciutto/i.test(a.pavementState || "")) return false;
+      }
+      if (accidentFilter?.propertyDamage === "yes" && !a.propertyDamage) return false;
+      if (accidentFilter?.propertyDamage === "no" && a.propertyDamage) return false;
+      if (accidentFilter?.year && !a.date.startsWith(accidentFilter.year)) return false;
       return true;
     });
   }, [accidents, showAccidents, injuriesOnly, accidentFilter]);
@@ -134,18 +227,24 @@ export function TrafficMap({
     [filteredAccidents],
   );
 
+  const visibleCentraline = useMemo(() => {
+    return centraline.filter((c) => {
+      const avg = avgByKey.get(deviceKey(c)) ?? 0;
+      return avg >= minFlow;
+    });
+  }, [centraline, avgByKey, minFlow]);
+
   const searchHits = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return centraline
+    return visibleCentraline
       .filter(
         (c) =>
           c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q),
       )
       .slice(0, 8);
-  }, [centraline, query]);
+  }, [visibleCentraline, query]);
 
-  // Map mount / layer redraw — selection is React state only (panel), not a remount trigger.
   useEffect(() => {
     let map: import("leaflet").Map | null = null;
     let cancelled = false;
@@ -160,8 +259,9 @@ export function TrafficMap({
       map = L.map(el, {
         center: [41.12, 16.87],
         zoom: 12,
-        scrollWheelZoom: false,
+        scrollWheelZoom: true,
       });
+      mapRef.current = map;
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution:
@@ -174,8 +274,8 @@ export function TrafficMap({
           style: {
             color: "#083f4c",
             weight: 1,
-            opacity: 0.35,
-            fillOpacity: 0.04,
+            opacity: 0.35 * opacity,
+            fillOpacity: 0.04 * opacity,
             fillColor: "#1a8a9e",
           },
           interactive: false,
@@ -183,19 +283,25 @@ export function TrafficMap({
       }
 
       if (showCentraline) {
-        for (const c of centraline) {
+        for (const c of visibleCentraline) {
           const key = deviceKey(c);
           const total = byDevice.get(key)?.total ?? 0;
           const intensity = Math.max(0.25, total / maxTotal);
+          const fill = heatMode
+            ? `hsl(${28 - intensity * 28}, 72%, ${48 + intensity * 10}%)`
+            : "#1a8a9e";
           const marker = L.circleMarker([c.latitude, c.longitude], {
-            radius: 7 + intensity * 10,
+            radius: heatMode ? 6 + intensity * 14 : 7 + intensity * 10,
             color: "#083f4c",
             weight: 1,
-            fillColor: "#1a8a9e",
-            fillOpacity: 0.35 + intensity * 0.55,
+            fillColor: fill,
+            fillOpacity: (0.35 + intensity * 0.55) * opacity,
           });
-          marker.bindTooltip(`${c.code} · ${c.name}`);
-          marker.on("click", () => setSelectedKey(key));
+          const score = payload.safetyByKey?.[key];
+          marker.bindTooltip(
+            `${c.code} · ${c.name}${score != null ? ` · safety ${score}` : ""}`,
+          );
+          marker.on("click", () => selectRef.current(key));
           marker.addTo(map);
         }
       }
@@ -208,17 +314,40 @@ export function TrafficMap({
           color: hasInjury ? "#8a2f1d" : "#c45c3e",
           weight: 1,
           fillColor: hasInjury ? "#c45c3e" : "#d4b896",
-          fillOpacity: 0.65,
+          fillOpacity: 0.65 * opacity,
         })
           .bindTooltip(
             cluster.count > 1
-              ? `${cluster.count} incidenti in zona · ${cluster.injuries} con lesioni`
-              : `${cluster.sample.date || "data n/d"} · ${
-                  cluster.sample.roadType || "strada"
-                } · ${cluster.sample.injuries ? "con lesioni" : "senza lesioni"}`,
+              ? `${cluster.count} incidenti · ${cluster.injuries} con lesioni (clic per elenco)`
+              : `${cluster.items[0]?.date || "data n/d"} · ${
+                  cluster.items[0]?.roadType || "strada"
+                }`,
           )
+          .on("click", () => setClusterList(cluster))
           .addTo(map!);
       }
+
+      if (measurePts.length) {
+        for (const pt of measurePts) {
+          L.circleMarker(pt, {
+            radius: 5,
+            color: "#c45c3e",
+            fillColor: "#c45c3e",
+            fillOpacity: 1,
+          }).addTo(map);
+        }
+        if (measurePts.length === 2) {
+          L.polyline(measurePts, { color: "#c45c3e", weight: 2, dashArray: "6 4" }).addTo(map);
+        }
+      }
+
+      map.on("click", (e: { latlng: { lat: number; lng: number } }) => {
+        if (!measureMode) return;
+        setMeasurePts((prev) => {
+          const next: Array<[number, number]> = [...prev, [e.latlng.lat, e.latlng.lng]];
+          return next.slice(-2);
+        });
+      });
 
       if (!didFlyToDeepLink.current && initialSelectedKey) {
         const focus = centraline.find((c) => deviceKey(c) === initialSelectedKey);
@@ -235,34 +364,188 @@ export function TrafficMap({
     return () => {
       cancelled = true;
       map?.remove();
+      mapRef.current = null;
       setReady(false);
     };
-    // Selection (`selectedKey`) is panel-only and must not remount the map.
   }, [
     centraline,
+    visibleCentraline,
     byDevice,
     maxTotal,
     accidentClusters,
     showCentraline,
     districts,
     initialSelectedKey,
+    heatMode,
+    opacity,
+    measureMode,
+    measurePts,
+    payload.safetyByKey,
   ]);
 
-  const recent = selectedFlow?.series.slice(-14) ?? [];
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    window.setTimeout(() => map.invalidateSize(), 80);
+  }, [fullscreen, mobileSheetOpen]);
+
+  const recentSeries = selectedFlow?.series.slice(-14) ?? [];
   const recentAvg =
-    recent.length > 0 ? recent.reduce((s, p) => s + p.value, 0) / recent.length : 0;
+    recentSeries.length > 0
+      ? recentSeries.reduce((s, p) => s + p.value, 0) / recentSeries.length
+      : 0;
 
   function selectCentralina(key: string) {
-    setSelectedKey(key);
+    if (compareArmed && selectedKey && key !== selectedKey) {
+      setCompareKey(key);
+      setCompareArmed(false);
+    } else {
+      setSelectedKey(key);
+    }
     setQuery("");
+    setMobileSheetOpen(true);
+    setRecent((prev) => {
+      const next = [key, ...prev.filter((k) => k !== key)].slice(0, 8);
+      writeList(HISTORY_KEY, next);
+      return next;
+    });
+  }
+  selectRef.current = selectCentralina;
+
+  function toggleBookmark(key: string) {
+    setBookmarks((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      writeList(BOOKMARK_KEY, next);
+      return next;
+    });
   }
 
+  async function copyCoords() {
+    if (!selected) return;
+    const text = `${selected.latitude.toFixed(5)}, ${selected.longitude.toFixed(5)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function locateMe() {
+    if (!navigator.geolocation || !mapRef.current) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        mapRef.current?.setView([pos.coords.latitude, pos.coords.longitude], 14, {
+          animate: true,
+        });
+      },
+      () => undefined,
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  }
+
+  async function toggleFullscreen() {
+    const el = shellRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      await el.requestFullscreen?.();
+      setFullscreen(true);
+    } else {
+      await document.exitFullscreen?.();
+      setFullscreen(false);
+    }
+  }
+
+  useEffect(() => {
+    function onFs() {
+      setFullscreen(Boolean(document.fullscreenElement));
+    }
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  const measureKm =
+    measurePts.length === 2
+      ? haversineKm(measurePts[0][0], measurePts[0][1], measurePts[1][0], measurePts[1][1])
+      : null;
+
+  const labelFor = (key: string) => {
+    const c = centraline.find((x) => deviceKey(x) === key);
+    return c ? `${c.code} · ${c.name}` : key;
+  };
+
   return (
-    <div className="map-shell">
+    <div className={`map-shell${fullscreen ? " map-shell--fullscreen" : ""}`} ref={shellRef}>
       <div className="map-frame" aria-busy={!ready}>
+        <div className="map-toolbar no-print" role="toolbar" aria-label="Controlli mappa">
+          <button type="button" className="chip" onClick={() => void toggleFullscreen()}>
+            {t("fullscreen")}
+          </button>
+          <button type="button" className="chip" onClick={locateMe}>
+            {t("locate")}
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={measureMode}
+            onClick={() => {
+              setMeasureMode((v) => !v);
+              setMeasurePts([]);
+            }}
+          >
+            {t("measure")}
+            {measureKm != null ? ` · ${measureKm.toFixed(2)} km` : ""}
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={showLegend}
+            onClick={() => setShowLegend((v) => !v)}
+          >
+            {t("legend")}
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={heatMode}
+            onClick={() => setHeatMode((v) => !v)}
+          >
+            {t("heat")}
+          </button>
+        </div>
+        {showLegend ? (
+          <div className="map-legend panel" role="note">
+            <strong>{t("legend")}</strong>
+            <ul>
+              <li>
+                <span className="swatch swatch--sea" /> Centraline (raggio ∝ flusso)
+              </li>
+              <li>
+                <span className="swatch swatch--coral" /> Incidenti con lesioni
+              </li>
+              <li>
+                <span className="swatch swatch--sand" /> Incidenti senza lesioni
+              </li>
+              {heatMode ? <li>Modalità calore: colore ∝ traffico</li> : null}
+            </ul>
+          </div>
+        ) : null}
         <div id="vista-map" style={{ width: "100%", height: "100%", minHeight: "60vh" }} />
       </div>
-      <aside className="side-panel panel">
+
+      <aside
+        className={`side-panel panel${mobileSheetOpen ? " side-panel--open" : " side-panel--collapsed"}`}
+      >
+        <button
+          type="button"
+          className="sheet-toggle no-print"
+          onClick={() => setMobileSheetOpen((v) => !v)}
+          aria-expanded={mobileSheetOpen}
+        >
+          {mobileSheetOpen ? "Chiudi scheda" : "Apri scheda centralina"}
+        </button>
+
         <div className="chip-row" role="group" aria-label="Livelli mappa">
           <button
             type="button"
@@ -291,10 +574,37 @@ export function TrafficMap({
           </button>
         </div>
 
-        <label className="muted" htmlFor="centralina-search" style={{ fontSize: "0.85rem" }}>
-          Cerca centralina
+        <label className="muted" htmlFor="layer-opacity" style={{ fontSize: "0.85rem" }}>
+          {t("opacity")}: {Math.round(opacity * 100)}%
         </label>
         <input
+          id="layer-opacity"
+          type="range"
+          min={0.2}
+          max={1}
+          step={0.05}
+          value={opacity}
+          onChange={(e) => setOpacity(Number(e.target.value))}
+        />
+
+        <label className="muted" htmlFor="min-flow" style={{ fontSize: "0.85rem" }}>
+          {t("min_flow")}: {Math.round(minFlow).toLocaleString("it-IT")}
+        </label>
+        <input
+          id="min-flow"
+          type="range"
+          min={0}
+          max={Math.max(1000, Math.round(maxTotal / 30))}
+          step={100}
+          value={minFlow}
+          onChange={(e) => setMinFlow(Number(e.target.value))}
+        />
+
+        <label className="muted" htmlFor="centralina-search" style={{ fontSize: "0.85rem" }}>
+          Cerca centralina <kbd className="kbd-hint">/</kbd>
+        </label>
+        <input
+          ref={searchRef}
           id="centralina-search"
           type="search"
           value={query}
@@ -307,26 +617,10 @@ export function TrafficMap({
           }}
           placeholder="Codice o nome…"
           autoComplete="off"
-          style={{
-            width: "100%",
-            padding: "0.45rem 0.65rem",
-            border: "1px solid var(--vb-line)",
-            borderRadius: "8px",
-            background: "rgba(255,255,255,0.7)",
-            font: "inherit",
-          }}
+          className="map-search-input"
         />
         {searchHits.length > 0 ? (
-          <ul
-            style={{
-              listStyle: "none",
-              margin: 0,
-              padding: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.25rem",
-            }}
-          >
+          <ul className="search-hits">
             {searchHits.map((c) => {
               const key = deviceKey(c);
               return (
@@ -334,17 +628,7 @@ export function TrafficMap({
                   <button
                     type="button"
                     onClick={() => selectCentralina(key)}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "0.4rem 0.5rem",
-                      border: "1px solid var(--vb-line)",
-                      borderRadius: "6px",
-                      background:
-                        key === selectedKey ? "rgba(26,138,158,0.15)" : "transparent",
-                      cursor: "pointer",
-                      font: "inherit",
-                    }}
+                    className={`search-hit${key === selectedKey ? " search-hit--active" : ""}`}
                   >
                     <strong>{c.code}</strong>
                     <span className="muted"> · {c.name}</span>
@@ -354,9 +638,45 @@ export function TrafficMap({
             })}
           </ul>
         ) : query.trim() ? (
-          <p className="muted" style={{ margin: 0, fontSize: "0.85rem" }}>
-            Nessuna centralina trovata.
-          </p>
+          <p className="muted empty-inline">Nessuna centralina trovata.</p>
+        ) : null}
+
+        {recent.length > 0 ? (
+          <div>
+            <p className="section__eyebrow">Recenti</p>
+            <div className="chip-row">
+              {recent.slice(0, 5).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="chip"
+                  aria-pressed={key === selectedKey}
+                  onClick={() => selectCentralina(key)}
+                >
+                  {labelFor(key).slice(0, 28)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {bookmarks.length > 0 ? (
+          <div>
+            <p className="section__eyebrow">Segnalibri</p>
+            <div className="chip-row">
+              {bookmarks.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="chip"
+                  aria-pressed={key === selectedKey}
+                  onClick={() => selectCentralina(key)}
+                >
+                  {labelFor(key).slice(0, 28)}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : null}
 
         <p className="section__eyebrow">Centralina</p>
@@ -366,19 +686,22 @@ export function TrafficMap({
             <p className="muted">
               Codice {selected.code} · {selected.detectors.length} spire · db{" "}
               {selected.device_db}/{selected.device_id}
+              {payload.safetyByKey?.[deviceKey(selected)] != null
+                ? ` · safety score ${payload.safetyByKey[deviceKey(selected)]}`
+                : ""}
             </p>
             <p>
-              Flusso totale nel mese sincronizzato:{" "}
+              Flusso totale nel periodo sincronizzato:{" "}
               <strong>{Math.round(selectedFlow?.total ?? 0).toLocaleString("it-IT")}</strong>{" "}
               passaggi
             </p>
             <p className="muted">
-              Media ultimi {recent.length || "—"} giorni:{" "}
-              {Math.round(recentAvg).toLocaleString("it-IT")} veicoli/giorno (somma spire)
+              Media ultimi {recentSeries.length || "—"} giorni:{" "}
+              {Math.round(recentAvg).toLocaleString("it-IT")} veicoli/giorno
             </p>
             <div className="chart-bars" style={{ height: 120 }}>
-              {recent.map((p) => {
-                const max = Math.max(...recent.map((x) => x.value), 1);
+              {recentSeries.map((p) => {
+                const max = Math.max(...recentSeries.map((x) => x.value), 1);
                 return (
                   <span
                     key={p.date}
@@ -387,6 +710,46 @@ export function TrafficMap({
                   />
                 );
               })}
+            </div>
+            <div className="chip-row">
+              <button
+                type="button"
+                className="chip"
+                aria-pressed={bookmarks.includes(deviceKey(selected))}
+                onClick={() => toggleBookmark(deviceKey(selected))}
+              >
+                {bookmarks.includes(deviceKey(selected)) ? t("bookmarked") : t("bookmark")}
+              </button>
+              <button
+                type="button"
+                className="chip"
+                aria-pressed={compareArmed}
+                onClick={() => {
+                  setCompareArmed(true);
+                  setCompareKey(null);
+                }}
+              >
+                {compareArmed ? "Scegli 2ª…" : t("compare")}
+              </button>
+              <button type="button" className="chip" onClick={() => void copyCoords()}>
+                {copied ? "OK" : t("coords")}
+              </button>
+              <a
+                className="chip"
+                href={`https://www.openstreetmap.org/?mlat=${selected.latitude}&mlon=${selected.longitude}#map=17/${selected.latitude}/${selected.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("open_osm")}
+              </a>
+              <a
+                className="chip"
+                href={`https://www.google.com/maps?q=${selected.latitude},${selected.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("open_gmaps")}
+              </a>
             </div>
             <ul className="muted" style={{ paddingLeft: "1.1rem", margin: 0 }}>
               {selected.detectors.slice(0, 6).map((d) => (
@@ -397,8 +760,50 @@ export function TrafficMap({
             </ul>
           </>
         ) : (
-          <p className="muted">Clicca un marker sulla mappa o cerca per codice/nome.</p>
+          <p className="muted empty-inline">Clicca un marker sulla mappa o cerca per codice/nome.</p>
         )}
+
+        {compare && selected && compareKey !== selectedKey ? (
+          <div className="compare-panel">
+            <p className="section__eyebrow">Confronto</p>
+            <div className="compare-grid">
+              <div>
+                <strong>{selected.code}</strong>
+                <p className="muted">{Math.round(selectedFlow?.total ?? 0).toLocaleString("it-IT")}</p>
+              </div>
+              <div>
+                <strong>{compare.code}</strong>
+                <p className="muted">{Math.round(compareFlow?.total ?? 0).toLocaleString("it-IT")}</p>
+              </div>
+            </div>
+            <button type="button" className="chip" onClick={() => setCompareKey(null)}>
+              Chiudi confronto
+            </button>
+          </div>
+        ) : compare && selected && compareKey === selectedKey ? (
+          <p className="muted">Seleziona un’altra centralina per confrontarla con questa.</p>
+        ) : null}
+
+        {clusterList ? (
+          <div className="cluster-list">
+            <p className="section__eyebrow">Cluster incidenti</p>
+            <p className="muted">
+              {clusterList.count} eventi · {clusterList.injuries} con lesioni
+            </p>
+            <ul>
+              {clusterList.items.slice(0, 12).map((a, i) => (
+                <li key={`${a.date}-${i}`}>
+                  {a.date} · {a.roadType || "strada"} ·{" "}
+                  {a.injuries ? "lesioni" : "senza lesioni"}
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="chip" onClick={() => setClusterList(null)}>
+              Chiudi elenco
+            </button>
+          </div>
+        ) : null}
+
         {showAccidents ? (
           <p className="muted" style={{ marginTop: "auto" }}>
             Overlay incidenti: {filteredAccidents.length.toLocaleString("it-IT")} eventi ·{" "}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SicurezzaClient } from "@/components/SicurezzaClient";
 import { formatDateIt, formatNumber, loadBundle } from "@/lib/data";
 import { toMapPayload, type MapDistricts } from "@/lib/map-data";
+import { safetyScores } from "@/lib/metrics";
 
 export const metadata: Metadata = {
   title: "Sicurezza stradale",
@@ -13,13 +14,17 @@ export default async function SicurezzaPage() {
     "districts" in bundle
       ? ((bundle as { districts?: MapDistricts }).districts)
       : undefined;
+  const scores = safetyScores(bundle);
+  const safetyByKey = Object.fromEntries(scores.map((s) => [s.key, s.score]));
   const payload = toMapPayload(
     bundle.centraline,
     bundle.flows,
     bundle.accidents,
     districts,
+    safetyByKey,
   );
   const syncedLabel = formatDateIt(bundle.syncedAt.slice(0, 10));
+  const worst = scores.slice(0, 5);
 
   return (
     <section className="section" style={{ paddingTop: "2rem" }}>
@@ -36,6 +41,35 @@ export default async function SicurezzaPage() {
             Aggiornato {syncedLabel}
           </p>
         </div>
+
+        <div className="panel" style={{ marginBottom: "1.25rem" }}>
+          <h2 style={{ fontSize: "1.25rem" }}>Safety score per centralina</h2>
+          <p className="muted">
+            Punteggio 0–100 (più alto = più sicuro) da lesioni entro 180 m rispetto al traffico
+            locale. Peggiori 5:
+          </p>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Incrocio</th>
+                <th>Score</th>
+                <th>Lesioni vicine</th>
+              </tr>
+            </thead>
+            <tbody>
+              {worst.map((row) => (
+                <tr key={row.key}>
+                  <td>
+                    {row.code} · {row.name}
+                  </td>
+                  <td>{row.score}</td>
+                  <td>{row.injuryNearby}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         <SicurezzaClient payload={payload} />
       </div>
     </section>
