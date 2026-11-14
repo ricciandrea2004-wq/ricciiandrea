@@ -43,8 +43,8 @@ export default async function AndamentoPage() {
             </thead>
             <tbody>
               {top.map((row) => (
-                <tr key={row.deviceId}>
-                  <td>{row.centralina?.name ?? `Device ${row.deviceId}`}</td>
+                <tr key={row.key}>
+                  <td>{row.centralina?.name ?? `Device ${row.key}`}</td>
                   <td>{row.centralina?.code ?? "—"}</td>
                   <td>{formatNumber(row.total)}</td>
                 </tr>

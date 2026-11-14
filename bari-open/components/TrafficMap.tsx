@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { MapPayload } from "@/lib/map-data";
+import { deviceKey } from "@/lib/device-key";
+import type { MapAccident, MapPayload } from "@/lib/map-data";
+
+const EMPTY_ACCIDENTS: MapAccident[] = [];
 
 type Props = {
   payload: MapPayload;
@@ -13,13 +16,15 @@ type Props = {
 };
 
 export function TrafficMap({ payload, showAccidents = false, accidentFilter }: Props) {
-  const { centraline, deviceFlows, accidents = [] } = payload;
-  const [selectedId, setSelectedId] = useState<number | null>(centraline[0]?.device_id ?? null);
+  const { centraline, deviceFlows } = payload;
+  const accidents = payload.accidents ?? EMPTY_ACCIDENTS;
+  const [selectedKey, setSelectedKey] = useState<string | null>(
+    centraline[0] ? deviceKey(centraline[0]) : null,
+  );
   const [ready, setReady] = useState(false);
 
   const byDevice = useMemo(() => {
-    const map = new Map(deviceFlows.map((f) => [f.device_id, f]));
-    return map;
+    return new Map(deviceFlows.map((f) => [f.key, f]));
   }, [deviceFlows]);
 
   const maxTotal = useMemo(() => {
@@ -28,11 +33,11 @@ export function TrafficMap({ payload, showAccidents = false, accidentFilter }: P
     return m;
   }, [deviceFlows]);
 
-  const selected = centraline.find((c) => c.device_id === selectedId) ?? null;
-  const selectedFlow = selected ? byDevice.get(selected.device_id) : undefined;
+  const selected = centraline.find((c) => deviceKey(c) === selectedKey) ?? null;
+  const selectedFlow = selected ? byDevice.get(deviceKey(selected)) : undefined;
 
   const filteredAccidents = useMemo(() => {
-    if (!showAccidents) return [];
+    if (!showAccidents) return EMPTY_ACCIDENTS;
     return accidents.filter((a) => {
       if (accidentFilter?.injuriesOnly && !a.injuries) return false;
       if (accidentFilter?.weather && accidentFilter.weather !== "tutti") {
@@ -65,7 +70,8 @@ export function TrafficMap({ payload, showAccidents = false, accidentFilter }: P
       }).addTo(map);
 
       for (const c of centraline) {
-        const total = byDevice.get(c.device_id)?.total ?? 0;
+        const key = deviceKey(c);
+        const total = byDevice.get(key)?.total ?? 0;
         const intensity = Math.max(0.25, total / maxTotal);
         const marker = L.circleMarker([c.latitude, c.longitude], {
           radius: 7 + intensity * 10,
@@ -75,7 +81,7 @@ export function TrafficMap({ payload, showAccidents = false, accidentFilter }: P
           fillOpacity: 0.35 + intensity * 0.55,
         });
         marker.bindTooltip(`${c.code} · ${c.name}`);
-        marker.on("click", () => setSelectedId(c.device_id));
+        marker.on("click", () => setSelectedKey(key));
         marker.addTo(map);
       }
 
@@ -120,8 +126,8 @@ export function TrafficMap({ payload, showAccidents = false, accidentFilter }: P
         {selected ? (
           <>
             <p className="muted">
-              Codice {selected.code} · {selected.detectors.length} spire · device{" "}
-              {selected.device_id}
+              Codice {selected.code} · {selected.detectors.length} spire · db{" "}
+              {selected.device_db}/{selected.device_id}
             </p>
             <p>
               Flusso totale nel mese sincronizzato:{" "}

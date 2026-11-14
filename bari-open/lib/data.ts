@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { VistaDataBundle } from "./types";
+import { deviceKey } from "./device-key";
 import { aggregateCityDaily, deviceTotals } from "./parse";
+import type { VistaDataBundle } from "./types";
 
 const DATA_PATH = path.join(process.cwd(), "data", "vista-bundle.json");
 
@@ -16,14 +17,14 @@ export function getCitySeries(bundle: VistaDataBundle) {
 
 export function getTopDevices(bundle: VistaDataBundle, limit = 8) {
   const totals = deviceTotals(bundle.flows);
-  const byId = new Map(bundle.centraline.map((c) => [c.device_id, c]));
+  const byKey = new Map(bundle.centraline.map((c) => [deviceKey(c), c]));
   return [...totals.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
-    .map(([deviceId, total]) => ({
-      deviceId,
+    .map(([key, total]) => ({
+      key,
       total,
-      centralina: byId.get(deviceId),
+      centralina: byKey.get(key),
     }));
 }
 

@@ -17,6 +17,12 @@ async function main() {
       bundle.centraline.every((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude)),
     ],
     [
+      "composite device keys unique",
+      new Set(
+        bundle.centraline.map((c) => `${c.device_db}:${c.device_type}:${c.device_id}`),
+      ).size === bundle.centraline.length,
+    ],
+    [
       "sample accident in Bari bbox",
       bundle.accidents.slice(0, 20).every(
         (a) => a.latitude > 40.9 && a.latitude < 41.3 && a.longitude > 16.6 && a.longitude < 17.1,

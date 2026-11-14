@@ -191,10 +191,11 @@ export function aggregateCityDaily(flows: DeviceFlow[]): FlowPoint[] {
     .map(([date, value]) => ({ date, value }));
 }
 
-export function deviceTotals(flows: DeviceFlow[]): Map<number, number> {
-  const map = new Map<number, number>();
+export function deviceTotals(flows: DeviceFlow[]): Map<string, number> {
+  const map = new Map<string, number>();
   for (const flow of flows) {
-    map.set(flow.device_id, (map.get(flow.device_id) ?? 0) + flow.total);
+    const key = `${flow.device_db}:${flow.device_type}:${flow.device_id}`;
+    map.set(key, (map.get(key) ?? 0) + flow.total);
   }
   return map;
 }
