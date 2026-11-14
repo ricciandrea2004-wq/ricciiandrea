@@ -1,8 +1,15 @@
-# competia.work · sito
+# competia.work · repo
 
-Il sito completo di Competia in Next.js (App Router, TypeScript): pagine pubbliche, accesso, workspace `/app` e `/analytics`. Segue l'[albero delle pagine](../sitemap/README.md) approvato il 9 ottobre 2026 (fase F1) e il [design system](../design-system/README.md) ispirato a Notion.
+**Produzione su www.competia.work:** Vista Bari (cruscotto open data mobilità), cartella [`bari-open/`](bari-open/).  
+Istruzioni cutover Vercel (Root Directory = `bari-open`): [`DEPLOY-VISTA-BARI.md`](DEPLOY-VISTA-BARI.md).
 
-La landing in `../landing/` resta separata: ci lavora il thread Supabase + Resend. Quando si unisce, la home di questo sito la sostituisce.
+---
+
+## Legacy · sito Competia (root)
+
+Il sito Competia in Next.js (App Router, TypeScript) resta in questa root come codice legacy: pagine pubbliche, accesso, workspace `/app` e `/analytics`. Segue l'[albero delle pagine](../sitemap/README.md) approvato il 9 ottobre 2026 (fase F1) e il [design system](../design-system/README.md) ispirato a Notion.
+
+La landing in `../landing/` resta separata: ci lavora il thread Supabase + Resend.
 
 ## Stato
 
@@ -17,7 +24,10 @@ La landing in `../landing/` resta separata: ci lavora il thread Supabase + Resen
 
 ## Pubblicazione
 
-Il repository GitHub `ricciandrea2004-wq/ricciiandrea` è collegato al progetto Vercel `competia-work`: ogni push su `main` pubblica il sito in produzione su www.competia.work; gli altri rami creano un'anteprima.
+Il repository GitHub `ricciandrea2004-wq/ricciiandrea` è collegato al progetto Vercel `competia-work`.
+
+- **Target dominio:** Vista Bari → imposta Root Directory del progetto Vercel su `bari-open` (vedi [`DEPLOY-VISTA-BARI.md`](DEPLOY-VISTA-BARI.md)).
+- Finché Root Directory è `.`, un push su `main` pubblica ancora il sito Competia legacy dalla root.
 
 ## Avvio
 
