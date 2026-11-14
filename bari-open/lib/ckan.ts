@@ -38,6 +38,21 @@ export async function packageShow(id: string): Promise<CkanPackage> {
   return ckanAction<CkanPackage>("package_show", { id });
 }
 
+export type PackageSearchResult = {
+  count: number;
+  results: CkanPackage[];
+};
+
+export async function packageSearch(
+  q: string,
+  rows = 10,
+): Promise<PackageSearchResult> {
+  return ckanAction<PackageSearchResult>("package_search", {
+    q,
+    rows: String(rows),
+  });
+}
+
 export async function downloadText(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: { "User-Agent": UA, Accept: "*/*" },
@@ -46,24 +61,46 @@ export async function downloadText(url: string): Promise<string> {
   return res.text();
 }
 
-export function pickLatestResource(
+function filterResources(
   resources: CkanResource[],
   opts: { format?: string; nameIncludes?: string } = {},
-): CkanResource {
-  const filtered = resources.filter((r) => {
+): CkanResource[] {
+  return resources.filter((r) => {
     if (opts.format && r.format.toUpperCase() !== opts.format.toUpperCase()) return false;
     if (opts.nameIncludes && !r.name.toLowerCase().includes(opts.nameIncludes.toLowerCase())) {
       return false;
     }
     return Boolean(r.url);
   });
-  if (!filtered.length) throw new Error("No matching CKAN resource");
-  return [...filtered].sort((a, b) => {
+}
+
+function sortResourcesNewestFirst(resources: CkanResource[]): CkanResource[] {
+  return [...resources].sort((a, b) => {
     const ta = Date.parse(a.last_modified || a.created || "") || 0;
     const tb = Date.parse(b.last_modified || b.created || "") || 0;
     if (tb !== ta) return tb - ta;
     return b.name.localeCompare(a.name);
-  })[0];
+  });
+}
+
+export function pickLatestResource(
+  resources: CkanResource[],
+  opts: { format?: string; nameIncludes?: string } = {},
+): CkanResource {
+  const filtered = filterResources(resources, opts);
+  if (!filtered.length) throw new Error("No matching CKAN resource");
+  return sortResourcesNewestFirst(filtered)[0];
+}
+
+/** Newest-first slice of matching resources (e.g. last N monthly CSVs). */
+export function pickLatestResources(
+  resources: CkanResource[],
+  limit: number,
+  opts: { format?: string; nameIncludes?: string } = {},
+): CkanResource[] {
+  const filtered = filterResources(resources, opts);
+  if (!filtered.length) throw new Error("No matching CKAN resource");
+  return sortResourcesNewestFirst(filtered).slice(0, limit);
 }
 
 export function datasetPageUrl(packageName: string): string {

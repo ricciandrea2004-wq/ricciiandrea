@@ -10,7 +10,6 @@ type Props = {
 
 export function SicurezzaClient({ payload }: Props) {
   const accidents = payload.accidents ?? [];
-  const [injuriesOnly, setInjuriesOnly] = useState(false);
   const [weather, setWeather] = useState("tutti");
 
   const weathers = useMemo(() => {
@@ -21,35 +20,16 @@ export function SicurezzaClient({ payload }: Props) {
     return ["tutti", ...[...set].sort((a, b) => a.localeCompare(b, "it"))];
   }, [accidents]);
 
-  const filteredCount = useMemo(() => {
-    return accidents.filter((a) => {
-      if (injuriesOnly && !a.injuries) return false;
-      if (weather !== "tutti" && !a.weather.toLowerCase().includes(weather.toLowerCase())) {
-        return false;
-      }
-      return true;
-    }).length;
-  }, [accidents, injuriesOnly, weather]);
+  const weatherCount = useMemo(() => {
+    if (weather === "tutti") return accidents.length;
+    return accidents.filter((a) =>
+      a.weather.toLowerCase().includes(weather.toLowerCase()),
+    ).length;
+  }, [accidents, weather]);
 
   return (
     <>
-      <div className="chip-row" style={{ marginBottom: "1rem" }}>
-        <button
-          type="button"
-          className="chip"
-          aria-pressed={!injuriesOnly}
-          onClick={() => setInjuriesOnly(false)}
-        >
-          Tutti ({accidents.length})
-        </button>
-        <button
-          type="button"
-          className="chip"
-          aria-pressed={injuriesOnly}
-          onClick={() => setInjuriesOnly(true)}
-        >
-          Solo con lesioni
-        </button>
+      <div className="chip-row" style={{ marginBottom: "1rem" }} role="group" aria-label="Filtro meteo">
         {weathers.slice(0, 8).map((w) => (
           <button
             key={w}
@@ -63,12 +43,12 @@ export function SicurezzaClient({ payload }: Props) {
         ))}
       </div>
       <p className="muted" style={{ marginBottom: "1rem" }}>
-        In overlay: {filteredCount.toLocaleString("it-IT")} incidenti
+        Filtro meteo: {weatherCount.toLocaleString("it-IT")} incidenti
       </p>
       <TrafficMap
         payload={payload}
-        showAccidents
-        accidentFilter={{ injuriesOnly, weather }}
+        initialShowAccidents
+        accidentFilter={{ weather }}
       />
     </>
   );

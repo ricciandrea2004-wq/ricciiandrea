@@ -1,3 +1,4 @@
+import { deviceKey } from "./device-key";
 import type { Accident, Centralina, DeviceFlow, FlowPoint } from "./types";
 
 type RawCentralina = {
@@ -194,8 +195,66 @@ export function aggregateCityDaily(flows: DeviceFlow[]): FlowPoint[] {
 export function deviceTotals(flows: DeviceFlow[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const flow of flows) {
-    const key = `${flow.device_db}:${flow.device_type}:${flow.device_id}`;
+    const key = deviceKey(flow);
     map.set(key, (map.get(key) ?? 0) + flow.total);
   }
   return map;
+}
+
+/** Merge monthly detector series; later files overwrite overlapping dates. */
+export function mergeFlows(batches: DeviceFlow[][]): DeviceFlow[] {
+  const map = new Map<
+    string,
+    {
+      device_id: number;
+      detector_id: number;
+      device_db: number;
+      device_type: number;
+      byDate: Map<string, number>;
+    }
+  >();
+
+  for (const batch of batches) {
+    for (const flow of batch) {
+      const key = `${deviceKey(flow)}:${flow.detector_id}`;
+      const prev = map.get(key) ?? {
+        device_id: flow.device_id,
+        detector_id: flow.detector_id,
+        device_db: flow.device_db,
+        device_type: flow.device_type,
+        byDate: new Map<string, number>(),
+      };
+      for (const point of flow.series) {
+        prev.byDate.set(point.date, point.value);
+      }
+      map.set(key, prev);
+    }
+  }
+
+  return [...map.values()].map((row) => {
+    const series = [...row.byDate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, value]) => ({ date, value }));
+    const total = series.reduce((s, p) => s + p.value, 0);
+    return {
+      device_id: row.device_id,
+      detector_id: row.detector_id,
+      device_db: row.device_db,
+      device_type: row.device_type,
+      series,
+      total,
+      avg: series.length ? total / series.length : 0,
+    } satisfies DeviceFlow;
+  });
+}
+
+/** Count distinct YYYY-MM months present in flow series. */
+export function countFlowMonths(flows: DeviceFlow[]): number {
+  const months = new Set<string>();
+  for (const flow of flows) {
+    for (const point of flow.series) {
+      if (point.date.length >= 7) months.add(point.date.slice(0, 7));
+    }
+  }
+  return months.size;
 }

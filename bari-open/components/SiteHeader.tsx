@@ -7,6 +7,8 @@ const LINKS = [
   { href: "/mappa", label: "Mappa" },
   { href: "/andamento", label: "Andamento" },
   { href: "/sicurezza", label: "Sicurezza" },
+  { href: "/briefing", label: "Briefing" },
+  { href: "/ora", label: "Ora" },
   { href: "/fonti", label: "Fonti" },
   { href: "/per-il-comune", label: "Per il Comune" },
 ];
@@ -33,5 +35,17 @@ export function SiteHeader() {
         </nav>
       </div>
     </header>
+  );
+}
+
+export function PrintButton({ label = "Stampa briefing" }: { label?: string }) {
+  return (
+    <button
+      type="button"
+      className="btn btn--primary no-print"
+      onClick={() => window.print()}
+    >
+      {label}
+    </button>
   );
 }

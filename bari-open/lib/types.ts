@@ -53,17 +53,35 @@ export type DatasetMeta = {
   resourceName?: string;
 };
 
+/** Simplified district / municipio polygons when CKAN exposes GeoJSON. */
+export type DistrictFeatureCollection = {
+  type: "FeatureCollection";
+  features: Array<{
+    type: "Feature";
+    properties: Record<string, unknown>;
+    geometry: {
+      type: "Polygon" | "MultiPolygon";
+      coordinates: number[][][] | number[][][][];
+    };
+  }>;
+};
+
 export type VistaDataBundle = {
   syncedAt: string;
   centraline: Centralina[];
   flows: DeviceFlow[];
   accidents: Accident[];
   sources: DatasetMeta[];
+  /** Circoscrizioni / municipi GeoJSON when available from CKAN. */
+  districts?: DistrictFeatureCollection;
   summary: {
     centralineCount: number;
     flowDays: number;
+    /** Distinct YYYY-MM months covered by flow series. */
+    flowMonths: number;
     accidentCount: number;
     injuryAccidents: number;
     cityDailyAvg: number;
+    flowResourceNames?: string[];
   };
 };

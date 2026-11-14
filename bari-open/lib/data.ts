@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { deviceKey } from "./device-key";
+import { getInsights as computeInsights } from "./insights";
 import { aggregateCityDaily, deviceTotals } from "./parse";
 import type { VistaDataBundle } from "./types";
 
@@ -26,6 +27,10 @@ export function getTopDevices(bundle: VistaDataBundle, limit = 8) {
       total,
       centralina: byKey.get(key),
     }));
+}
+
+export function getInsights(bundle: VistaDataBundle) {
+  return computeInsights(bundle);
 }
 
 export function formatNumber(n: number): string {

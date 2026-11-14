@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { formatDateIt, formatNumber, loadBundle } from "@/lib/data";
+import { formatDateIt, formatNumber, getInsights, loadBundle } from "@/lib/data";
 
 export default async function HomePage() {
   const bundle = await loadBundle();
   const synced = formatDateIt(bundle.syncedAt.slice(0, 10));
+  const insights = getInsights(bundle);
+  const homeFindings = insights.briefingFindings.slice(0, 3);
 
   return (
     <>
@@ -21,8 +23,8 @@ export default async function HomePage() {
             <Link className="btn btn--primary" href="/mappa">
               Apri la mappa
             </Link>
-            <Link className="btn btn--ghost" href="/per-il-comune">
-              Per il Comune
+            <Link className="btn btn--ghost" href="/briefing">
+              Briefing settimanale
             </Link>
           </div>
         </div>
@@ -52,6 +54,19 @@ export default async function HomePage() {
               <strong>{formatNumber(bundle.summary.accidentCount)}</strong>
               <span>incidenti 2025 geolocalizzati</span>
             </div>
+          </div>
+
+          <div className="home-insights">
+            <p className="section__eyebrow">Evidenze</p>
+            <h3 className="home-insights__title">Insight dal briefing</h3>
+            <ul className="home-insights__list">
+              {homeFindings.map((finding, i) => (
+                <li key={`${i}-${finding.slice(0, 20)}`}>{finding}</li>
+              ))}
+            </ul>
+            <Link className="btn btn--ghost-dark" href="/briefing">
+              Apri il briefing completo
+            </Link>
           </div>
         </div>
       </section>

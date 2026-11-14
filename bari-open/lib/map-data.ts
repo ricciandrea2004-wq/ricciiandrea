@@ -53,16 +53,21 @@ export type MapAccident = Pick<
   "date" | "latitude" | "longitude" | "roadType" | "weather" | "injuries"
 >;
 
+/** Optional municipio / quartiere outlines when present in the data bundle. */
+export type MapDistricts = GeoJSON.FeatureCollection;
+
 export type MapPayload = {
   centraline: Centralina[];
   deviceFlows: DeviceFlowSummary[];
   accidents?: MapAccident[];
+  districts?: MapDistricts;
 };
 
 export function toMapPayload(
   centraline: Centralina[],
   flows: DeviceFlow[],
   accidents?: Accident[],
+  districts?: MapDistricts,
 ): MapPayload {
   return {
     centraline,
@@ -75,5 +80,6 @@ export function toMapPayload(
       weather: a.weather,
       injuries: a.injuries,
     })),
+    districts,
   };
 }

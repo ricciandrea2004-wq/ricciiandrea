@@ -1,31 +1,102 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { datasetPageUrl, downloadText, packageShow, pickLatestResource } from "../lib/ckan";
+import {
+  datasetPageUrl,
+  downloadText,
+  packageSearch,
+  packageShow,
+  pickLatestResource,
+  pickLatestResources,
+  type CkanPackage,
+  type CkanResource,
+} from "../lib/ckan";
+import { simplifyFeatureCollection } from "../lib/geo";
 import {
   aggregateCityDaily,
+  countFlowMonths,
+  mergeFlows,
   parseAccidents,
   parseCentraline,
   parseFlowsCsv,
 } from "../lib/parse";
-import type { DatasetMeta, VistaDataBundle } from "../lib/types";
+import type { DatasetMeta, DistrictFeatureCollection, VistaDataBundle } from "../lib/types";
 
 const OUT_DIR = path.join(process.cwd(), "data");
 const OUT_FILE = path.join(OUT_DIR, "vista-bundle.json");
+const FLOW_MONTHS = 6;
+
+function looksLikeGeoJson(resource: CkanResource): boolean {
+  const fmt = resource.format.toUpperCase();
+  const name = resource.name.toLowerCase();
+  const url = resource.url.toLowerCase();
+  return (
+    fmt === "GEOJSON" ||
+    (fmt === "JSON" && (name.includes("geojson") || url.includes(".geojson"))) ||
+    name.endsWith(".geojson") ||
+    url.includes(".geojson")
+  );
+}
+
+function isDistrictPackage(pkg: CkanPackage): boolean {
+  const hay = `${pkg.name} ${pkg.title}`.toLowerCase();
+  return (
+    hay.includes("circoscrizioni") ||
+    hay.includes("circorscrizioni") ||
+    hay.includes("municipi")
+  );
+}
+
+async function tryFetchDistricts(): Promise<{
+  districts?: DistrictFeatureCollection;
+  source?: DatasetMeta;
+}> {
+  try {
+    const search = await packageSearch("circoscrizioni", 12);
+    const candidates = (search.results ?? []).filter(isDistrictPackage);
+
+    for (const pkg of candidates) {
+      const geoResources = (pkg.resources ?? []).filter(looksLikeGeoJson);
+      if (!geoResources.length) continue;
+      const res = pickLatestResource(geoResources);
+      const text = await downloadText(res.url);
+      const parsed = JSON.parse(text) as DistrictFeatureCollection;
+      if (parsed?.type !== "FeatureCollection" || !Array.isArray(parsed.features)) {
+        continue;
+      }
+      const districts = simplifyFeatureCollection(parsed, 4);
+      return {
+        districts,
+        source: {
+          id: pkg.name,
+          title: pkg.title,
+          url: datasetPageUrl(pkg.name),
+          license: pkg.license_title || pkg.license_id || "Open data",
+          resourceName: res.name,
+        },
+      };
+    }
+    console.log("Districts: nessun GeoJSON circoscrizioni/municipi su CKAN (solo ZIP/shape).");
+  } catch (err) {
+    console.warn("Districts: skip —", err instanceof Error ? err.message : err);
+  }
+  return {};
+}
 
 async function main() {
   console.log("Sync Vista Bari open data…");
 
-  const [centralinePkg, flowsPkg, accidentsPkg] = await Promise.all([
+  const [centralinePkg, flowsPkg, accidentsPkg, districtAttempt] = await Promise.all([
     packageShow("centraline-semaforiche"),
     packageShow("flussi-di-traffico-giornalieri"),
     packageShow("incidenti-stradali-anno-2025"),
+    tryFetchDistricts(),
   ]);
 
   const centralineRes = pickLatestResource(centralinePkg.resources, {
     format: "JSON",
     nameIncludes: "centraline_semaforiche",
   });
-  const flowsRes = pickLatestResource(flowsPkg.resources, {
+  const flowsResources = pickLatestResources(flowsPkg.resources, FLOW_MONTHS, {
     format: "CSV",
     nameIncludes: "vehiclesdaily",
   });
@@ -33,16 +104,22 @@ async function main() {
     format: "JSON",
   });
 
-  const [centralineText, flowsText, accidentsText] = await Promise.all([
+  console.log(
+    `Flows: downloading ${flowsResources.length} monthly CSV — ${flowsResources.map((r) => r.name).join(", ")}`,
+  );
+
+  const [centralineText, accidentsText, ...flowsTexts] = await Promise.all([
     downloadText(centralineRes.url),
-    downloadText(flowsRes.url),
     downloadText(accidentsRes.url),
+    ...flowsResources.map((r) => downloadText(r.url)),
   ]);
 
   const centraline = parseCentraline(centralineText);
-  const flows = parseFlowsCsv(flowsText);
+  const flowBatches = flowsTexts.map((text) => parseFlowsCsv(text));
+  const flows = mergeFlows(flowBatches);
   const accidents = parseAccidents(accidentsText);
   const cityDaily = aggregateCityDaily(flows);
+  const flowMonths = countFlowMonths(flows);
   const cityDailyAvg =
     cityDaily.length > 0
       ? cityDaily.reduce((s, p) => s + p.value, 0) / cityDaily.length
@@ -61,7 +138,7 @@ async function main() {
       title: flowsPkg.title,
       url: datasetPageUrl(flowsPkg.name),
       license: flowsPkg.license_title || flowsPkg.license_id || "Open data",
-      resourceName: flowsRes.name,
+      resourceName: flowsResources.map((r) => r.name).join(", "),
     },
     {
       id: accidentsPkg.name,
@@ -71,6 +148,7 @@ async function main() {
       resourceName: accidentsRes.name,
     },
   ];
+  if (districtAttempt.source) sources.push(districtAttempt.source);
 
   const bundle: VistaDataBundle = {
     syncedAt: new Date().toISOString(),
@@ -78,19 +156,23 @@ async function main() {
     flows,
     accidents,
     sources,
+    ...(districtAttempt.districts ? { districts: districtAttempt.districts } : {}),
     summary: {
       centralineCount: centraline.length,
       flowDays: cityDaily.length,
+      flowMonths,
       accidentCount: accidents.length,
       injuryAccidents: accidents.filter((a) => a.injuries).length,
       cityDailyAvg: Math.round(cityDailyAvg),
+      flowResourceNames: flowsResources.map((r) => r.name),
     },
   };
 
   await mkdir(OUT_DIR, { recursive: true });
   await writeFile(OUT_FILE, JSON.stringify(bundle));
   console.log(
-    `Wrote ${OUT_FILE}: ${centraline.length} centraline, ${flows.length} detector series, ${accidents.length} incidenti`,
+    `Wrote ${OUT_FILE}: ${centraline.length} centraline, ${flows.length} detector series, ${cityDaily.length} days / ${flowMonths} months, ${accidents.length} incidenti` +
+      (bundle.districts ? `, ${bundle.districts.features.length} districts` : ""),
   );
 }
 
